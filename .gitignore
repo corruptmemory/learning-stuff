@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Vendored JS libraries (downloaded by build.sh)
+shared/vendor/
+
+# Generated data
+data-science/**/data/*.json
+finance/**/data/*.json
+ml/**/data/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~

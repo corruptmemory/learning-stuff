@@ -1,0 +1,420 @@
+/* ── Learning Environment Base Styles ─────────────────────── */
+
+:root {
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace;
+    --font-math: "KaTeX_Main", serif;
+
+    --color-bg: #fafafa;
+    --color-surface: #ffffff;
+    --color-text: #1a1a1a;
+    --color-text-muted: #666666;
+    --color-border: #e0e0e0;
+    --color-accent: #2563eb;
+    --color-accent-light: #dbeafe;
+    --color-treatment: #dc2626;
+    --color-control: #2563eb;
+    --color-highlight: #f59e0b;
+    --color-success: #16a34a;
+
+    --sandbox-gap: 2rem;
+    --content-max-width: 960px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--color-text);
+    background: var(--color-bg);
+    padding: 2rem 1rem;
+}
+
+/* ── Page Layout ─────────────────────────────────────────── */
+
+.exploration {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+}
+
+.exploration > header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.exploration > header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.exploration > header .subtitle {
+    color: var(--color-text-muted);
+    font-size: 1rem;
+}
+
+/* ── Conceptual Intro ────────────────────────────────────── */
+
+.intro {
+    margin-bottom: var(--sandbox-gap);
+    font-size: 1.05rem;
+}
+
+.intro p {
+    margin-bottom: 1em;
+}
+
+/* ── Sandbox Sections ────────────────────────────────────── */
+
+.sandbox {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: var(--sandbox-gap);
+}
+
+.sandbox h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+}
+
+.sandbox .description {
+    color: var(--color-text-muted);
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+}
+
+.sandbox .description p {
+    margin-bottom: 0.5em;
+}
+
+/* ── Chart + Controls Layout ─────────────────────────────── */
+
+.sandbox-content {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .sandbox-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-container {
+    min-height: 350px;
+    width: 100%;
+}
+
+/* ── Controls Panel ──────────────────────────────────────── */
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--color-bg);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.control-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.control-group .control-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.control-group input[type="range"] {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--color-border);
+    border-radius: 3px;
+    outline: none;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+}
+
+.control-group input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    border: none;
+}
+
+.control-group .value-display {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    min-width: 3em;
+    text-align: right;
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.control-group button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.control-group button:hover {
+    background: var(--color-accent-light);
+    border-color: var(--color-accent);
+}
+
+/* ── Dynamic Readout ─────────────────────────────────────── */
+
+.readout {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--color-bg);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.readout .estimate {
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+.readout .estimate.correct {
+    color: var(--color-success);
+}
+
+.readout .estimate.wrong {
+    color: var(--color-treatment);
+}
+
+/* ── Estimate Comparison Cards ───────────────────────────── */
+
+.estimates-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .estimates-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.estimate-card {
+    padding: 1rem;
+    border-radius: 6px;
+    border: 2px solid var(--color-border);
+    text-align: center;
+}
+
+.estimate-card.correct {
+    border-color: var(--color-success);
+    background: #f0fdf4;
+}
+
+.estimate-card.wrong {
+    border-color: var(--color-treatment);
+    background: #fef2f2;
+}
+
+.estimate-card h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.estimate-card .value {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.estimate-card .bias-label {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    color: var(--color-text-muted);
+}
+
+/* ── Math ────────────────────────────────────────────────── */
+
+.math-block {
+    margin: 1em 0;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+/* ── Code Snippets ───────────────────────────────────────── */
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    border: 1px solid var(--color-border);
+}
+
+/* ── Rosetta Stone (side-by-side code panels) ────────────── */
+
+.rosetta-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.rosetta-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.rosetta-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.rosetta-concept {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.rosetta-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .rosetta-panels {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rosetta-panel {
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.rosetta-panel.r {
+    border-top: 3px solid #276DC3;
+}
+
+.rosetta-panel.python {
+    border-top: 3px solid #3776AB;
+}
+
+.rosetta-lang {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+}
+
+.rosetta-panel.r .rosetta-lang {
+    color: #276DC3;
+}
+
+.rosetta-panel.python .rosetta-lang {
+    color: #3776AB;
+}
+
+.rosetta-panel pre {
+    margin: 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    background: #fafafa;
+}
+
+.rosetta-panel pre code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-text);
+}
+
+.rosetta-note {
+    padding: 0.75rem 1rem;
+    background: var(--color-accent-light);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-left: 3px solid var(--color-accent);
+}
+
+.rosetta-note strong {
+    color: var(--color-accent);
+}
+
+/* ── Section Connections ─────────────────────────────────── */
+
+.connection {
+    text-align: center;
+    padding: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.connection::before {
+    content: "↓";
+    display: block;
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}

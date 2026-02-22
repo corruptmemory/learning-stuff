@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Difference-in-Differences</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="../../shared/vendor/katex/katex.min.css">
+    <script src="../../shared/vendor/katex/katex.min.js"></script>
+    <script src="../../shared/vendor/katex/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="../../shared/vendor/plotly.min.js"></script>
+
+    <!-- Shared styles and utilities -->
+    <link rel="stylesheet" href="../../shared/explore.css">
+    <script src="../../shared/explore.js"></script>
+</head>
+<body>
+
+<div class="exploration">
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <header>
+        <h1>Difference-in-Differences</h1>
+        <div class="subtitle">
+            How to measure causal effects when you can't run an experiment
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="intro">
+        <p>
+            You want to know: <strong>does hosting the Olympics cause a country to win more medals?</strong>
+            You can't randomly assign who hosts. You can't rewind time. You have observational data
+            and a question about causation. This is exactly where Difference-in-Differences (DiD) lives.
+        </p>
+        <p>
+            The core idea is deceptively simple. You observe two groups over time — one that gets
+            "treated" (hosts the Olympics) and one that doesn't. You compare <em>how much each group changed</em>,
+            and attribute the <em>difference in those changes</em> to the treatment:
+        </p>
+        <div class="math-block">
+            $$\hat{\tau}_{\text{DiD}} = \bigl(\bar{Y}^{\text{treat}}_{\text{after}} - \bar{Y}^{\text{treat}}_{\text{before}}\bigr) - \bigl(\bar{Y}^{\text{ctrl}}_{\text{after}} - \bar{Y}^{\text{ctrl}}_{\text{before}}\bigr)$$
+        </div>
+        <p>
+            That's it. But the power — and the danger — is all in the assumptions hiding behind
+            that simple formula. Let's build the intuition.
+        </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 1: Two Groups, One Shock -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox1">
+        <h2>Sandbox 1: Two Groups, One Shock</h2>
+        <div class="description">
+            <p>
+                Two groups trend over time. At period $T$, the treatment group gets a shock
+                (hosting the Olympics, a policy change, a drug administered — whatever you're studying).
+                Play with the parameters and watch the DiD estimate react.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart1"></div>
+            <div class="controls" id="controls1"></div>
+        </div>
+
+        <div class="readout" id="readout1"></div>
+    </section>
+
+    <div class="connection">Now that you see the basic mechanics…</div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 2: Why Not Just Before/After? -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox2">
+        <h2>Sandbox 2: Why Not Just Compare Before/After?</h2>
+        <div class="description">
+            <p>
+                There are simpler ways to estimate the treatment effect. Why not just compare
+                the treatment group before and after? Or compare treatment to control at the end?
+                Each approach makes a <em>different</em> mistake. DiD avoids both.
+            </p>
+            <p>
+                The three estimates below use the <strong>same data</strong>. Watch which ones get
+                the right answer — and which ones break — as you change the parameters.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart2"></div>
+            <div class="controls" id="controls2"></div>
+        </div>
+
+        <div class="estimates-row" id="estimates2"></div>
+
+        <div class="readout" id="readout2"></div>
+    </section>
+
+    <div class="connection">So DiD works when the alternatives don't. But when does DiD itself break?</div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 3: The Parallel Trends Assumption -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox3">
+        <h2>Sandbox 3: The Parallel Trends Assumption</h2>
+        <div class="description">
+            <p>
+                DiD's crucial assumption: <em>in the absence of treatment, both groups would have
+                followed parallel trends</em>. You can never prove this (the counterfactual doesn't
+                exist), but you can check if pre-treatment trends are parallel — and you can see
+                what happens when they're not.
+            </p>
+            <p>
+                Use the <strong>trend divergence</strong> slider to break the parallel trends assumption.
+                Watch the DiD estimate become biased.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart3"></div>
+            <div class="controls" id="controls3"></div>
+        </div>
+
+        <div class="readout" id="readout3"></div>
+    </section>
+
+    <div class="connection">Now let's connect this to something real…</div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 4: The Olympic Connection -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox4">
+        <h2>Sandbox 4: The Olympic Connection</h2>
+        <div class="description">
+            <p>
+                Simulated data inspired by the Olympic medal analysis. Multiple countries, each
+                with a baseline medal rate, host in different years. The DiD estimator pools
+                across all these "experiments" to estimate the hosting effect.
+            </p>
+            <p>
+                This is closer to what Cremieux actually does: the treatment isn't one country
+                at one time — it's <em>many countries, each hosting once</em>, which lets you
+                estimate the effect more precisely.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart4"></div>
+            <div class="controls" id="controls4"></div>
+        </div>
+
+        <div class="readout" id="readout4"></div>
+    </section>
+
+    <div class="connection">Now let's see what this looks like in code…</div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 5: The Code (Rosetta Stone) -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox5">
+        <h2>Sandbox 5: The Code — R and Python Side by Side</h2>
+        <div class="description">
+            <p>
+                Everything you just explored with sliders reduces to a few lines of code.
+                Here's the same DiD analysis expressed in both R and Python — not as a
+                language tutorial, but as a <em>Rosetta Stone</em>. Each block does the
+                same thing; the concept is the anchor, the syntax is just dialect.
+            </p>
+        </div>
+
+        <!-- Basic DiD -->
+        <div class="rosetta-section">
+            <h3>The Basic DiD Estimate (what Sandbox 1 computes)</h3>
+            <p class="rosetta-concept">
+                Group means, differenced twice: $\hat{\tau} = (\bar{Y}^T_{post} - \bar{Y}^T_{pre}) - (\bar{Y}^C_{post} - \bar{Y}^C_{pre})$
+            </p>
+            <div class="rosetta-panels">
+                <div class="rosetta-panel r">
+                    <div class="rosetta-lang">R</div>
+<pre><code># Group means approach
+did_estimate &lt;- mean(df$y[df$treat == 1 &amp; df$post == 1]) -
+               mean(df$y[df$treat == 1 &amp; df$post == 0]) -
+              (mean(df$y[df$treat == 0 &amp; df$post == 1]) -
+               mean(df$y[df$treat == 0 &amp; df$post == 0]))
+
+# Equivalent regression (more common in practice)
+library(fixest)
+model &lt;- feols(y ~ treat:post | id + time, data = df)
+#                ^^^^^^^^^^   ^^^^^^^^^^
+#                interaction   fixed effects for unit and time
+#                = the DiD     (absorb level differences + trends)</code></pre>
+                </div>
+                <div class="rosetta-panel python">
+                    <div class="rosetta-lang">Python</div>
+<pre><code># Group means approach
+import pandas as pd
+did_estimate = (df.query('treat==1 & post==1')['y'].mean() -
+                df.query('treat==1 & post==0')['y'].mean() -
+               (df.query('treat==0 & post==1')['y'].mean() -
+                df.query('treat==0 & post==0')['y'].mean()))
+
+# Equivalent regression
+import pyfixest as pf
+model = pf.feols("y ~ treat:post | id + time", data=df)
+#                  ^^^^^^^^^^      ^^^^^^^^^^
+#                  interaction      fixed effects for unit and time
+#                  = the DiD        (absorb level differences + trends)</code></pre>
+                </div>
+            </div>
+            <div class="rosetta-note">
+                <strong>Key mapping:</strong> The <code>feols()</code> function exists in both
+                ecosystems — R's <code>fixest</code> package and Python's <code>pyfixest</code>
+                (which deliberately mirrors the R API). The formula syntax is identical:
+                <code>y ~ treat:post | id + time</code>. The <code>|</code> separates the
+                model from the fixed effects. This is the form you'll see in Cremieux's code.
+            </div>
+        </div>
+
+        <!-- Two-way Fixed Effects -->
+        <div class="rosetta-section">
+            <h3>Two-Way Fixed Effects (what Sandbox 4 does under the hood)</h3>
+            <p class="rosetta-concept">
+                With multiple countries hosting at different times, DiD becomes a
+                <em>two-way fixed effects</em> (TWFE) regression: absorb country-level
+                and time-level variation, estimate the treatment coefficient.
+            </p>
+            <div class="rosetta-panels">
+                <div class="rosetta-panel r">
+                    <div class="rosetta-lang">R</div>
+<pre><code>library(fixest)
+
+# TWFE regression for Olympic hosting effect
+model &lt;- feols(
+  medals ~ hosting | country + year,
+  data = olympics
+)
+# hosting coefficient = DiD estimate of
+# the causal effect of hosting on medals
+
+summary(model)
+# Shows: coefficient, std error, t-stat, p-value
+
+# Decomposition: control for delegation size
+model2 &lt;- feols(
+  medals ~ hosting + delegation_size | country + year,
+  data = olympics
+)
+# Now 'hosting' is the residual effect
+# AFTER accounting for larger delegations</code></pre>
+                </div>
+                <div class="rosetta-panel python">
+                    <div class="rosetta-lang">Python</div>
+<pre><code>import pyfixest as pf
+
+# TWFE regression for Olympic hosting effect
+model = pf.feols(
+    "medals ~ hosting | country + year",
+    data=olympics
+)
+# hosting coefficient = DiD estimate of
+# the causal effect of hosting on medals
+
+model.summary()
+# Shows: coefficient, std error, t-stat, p-value
+
+# Decomposition: control for delegation size
+model2 = pf.feols(
+    "medals ~ hosting + delegation_size | country + year",
+    data=olympics
+)
+# Now 'hosting' is the residual effect
+# AFTER accounting for larger delegations</code></pre>
+                </div>
+            </div>
+            <div class="rosetta-note">
+                <strong>Notice:</strong> The formula strings are <em>identical</em> between R and Python.
+                This is by design — <code>pyfixest</code> was built as a Python port of R's
+                <code>fixest</code>. If you can read Cremieux's R formula, you can paste it
+                into Python and it (mostly) just works.
+            </div>
+        </div>
+
+        <!-- Testing Parallel Trends -->
+        <div class="rosetta-section">
+            <h3>Testing Parallel Trends (the assumption from Sandbox 3)</h3>
+            <p class="rosetta-concept">
+                You can't prove parallel trends, but you can check pre-treatment trends.
+                An "event study" plot shows the treatment effect at each time period
+                relative to the treatment date. Pre-treatment coefficients should be near zero.
+            </p>
+            <div class="rosetta-panels">
+                <div class="rosetta-panel r">
+                    <div class="rosetta-lang">R</div>
+<pre><code>library(fixest)
+
+# Event study: estimate effect at each
+# period relative to treatment
+model_es &lt;- feols(
+  medals ~ i(rel_year, ref = -1) | country + year,
+  data = olympics
+)
+#         ^^^^^^^^^^^^^^^^^^^^^^^^
+#         interaction of relative-year dummies
+#         ref = -1 means "1 period before
+#         treatment is the baseline"
+
+# Plot it — fixest has built-in event study plots
+iplot(model_es)
+# Pre-treatment coefficients near 0?
+# → parallel trends plausible</code></pre>
+                </div>
+                <div class="rosetta-panel python">
+                    <div class="rosetta-lang">Python</div>
+<pre><code>import pyfixest as pf
+
+# Event study: estimate effect at each
+# period relative to treatment
+model_es = pf.feols(
+    "medals ~ i(rel_year, ref=-1) | country + year",
+    data=olympics
+)
+#           ^^^^^^^^^^^^^^^^^^^^^^^^
+#           interaction of relative-year dummies
+#           ref=-1 means "1 period before
+#           treatment is the baseline"
+
+# Plot it — pyfixest also has event study plots
+model_es.iplot()
+# Pre-treatment coefficients near 0?
+# → parallel trends plausible</code></pre>
+                </div>
+            </div>
+            <div class="rosetta-note">
+                <strong>The event study plot</strong> is the standard "show your work" diagram
+                in any DiD paper. When you see a plot with coefficients bouncing around zero
+                before treatment and jumping up after — that's this. Cremieux shows exactly
+                this pattern in his article.
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- EXPLORATION LOGIC -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllMath();
+    initSandbox1();
+    initSandbox2();
+    initSandbox3();
+    initSandbox4();
+});
+
+// ── Shared data generation ──────────────────────────────────
+
+function generateDiDData(opts) {
+    const {
+        nPeriods = 20,
+        treatmentTime = 10,
+        trendControl = 0.5,
+        trendTreatment = 0.5,
+        baseControl = 10,
+        baseTreatment = 15,
+        effect = 5,
+        noise = 1,
+        trendDivergence = 0,
+        seed = 42,
+    } = opts;
+
+    const rng = seededRandom(seed);
+    const periods = [];
+    const control = [];
+    const treatment = [];
+    const treatmentCounterfactual = [];
+
+    for (let t = 0; t < nPeriods; t++) {
+        periods.push(t);
+
+        // Control group: may have non-linear divergence
+        const controlDivergence = trendDivergence * Math.pow(Math.max(0, t - treatmentTime), 2) / nPeriods;
+        const yc = baseControl + trendControl * t + controlDivergence + normalRandom(rng, 0, noise);
+        control.push(yc);
+
+        // Treatment group: gets effect after treatmentTime
+        const treated = t >= treatmentTime ? effect : 0;
+        const yt = baseTreatment + trendTreatment * t + treated + normalRandom(rng, 0, noise);
+        treatment.push(yt);
+
+        // Counterfactual (what treatment would have been without the effect)
+        const ytCf = baseTreatment + trendTreatment * t + normalRandom(rng, 0, noise * 0.1);
+        treatmentCounterfactual.push(ytCf);
+    }
+
+    return { periods, control, treatment, treatmentCounterfactual, treatmentTime };
+}
+
+function computeEstimates(data) {
+    const { control, treatment, treatmentTime } = data;
+
+    const mean = (arr, start, end) => {
+        const slice = arr.slice(start, end);
+        return slice.reduce((a, b) => a + b, 0) / slice.length;
+    };
+
+    const treatBefore = mean(treatment, 0, treatmentTime);
+    const treatAfter = mean(treatment, treatmentTime, treatment.length);
+    const ctrlBefore = mean(control, 0, treatmentTime);
+    const ctrlAfter = mean(control, treatmentTime, control.length);
+
+    return {
+        beforeAfter: treatAfter - treatBefore,             // naive: contaminated by trend
+        simpleDiff: treatAfter - ctrlAfter,                // naive: contaminated by level difference
+        did: (treatAfter - treatBefore) - (ctrlAfter - ctrlBefore),  // the good one
+        treatBefore, treatAfter, ctrlBefore, ctrlAfter,
+    };
+}
+
+
+// ── SANDBOX 1 ───────────────────────────────────────────────
+
+function initSandbox1() {
+    const controls = document.getElementById('controls1');
+    const state = { effect: 5, noise: 1.0, trendSlope: 0.5, treatmentTime: 10, seed: 42 };
+
+    createSlider(controls, {
+        label: 'Treatment Effect', id: 's1-effect',
+        min: 0, max: 15, step: 0.5, value: state.effect,
+        format: v => v.toFixed(1),
+        onChange: v => { state.effect = v; updateSandbox1(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Noise', id: 's1-noise',
+        min: 0, max: 5, step: 0.25, value: state.noise,
+        format: v => v.toFixed(2),
+        onChange: v => { state.noise = v; updateSandbox1(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Trend Slope', id: 's1-trend',
+        min: 0, max: 2, step: 0.1, value: state.trendSlope,
+        format: v => v.toFixed(1),
+        onChange: v => { state.trendSlope = v; updateSandbox1(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Treatment Time', id: 's1-time',
+        min: 3, max: 17, step: 1, value: state.treatmentTime,
+        format: v => `t=${v}`,
+        onChange: v => { state.treatmentTime = v; updateSandbox1(state); },
+    });
+
+    createButton(controls, {
+        label: '↻ New Random Draw',
+        onClick: () => { state.seed = Math.floor(Math.random() * 10000); updateSandbox1(state); },
+    });
+
+    updateSandbox1(state);
+}
+
+function updateSandbox1(state) {
+    const data = generateDiDData({
+        effect: state.effect,
+        noise: state.noise,
+        trendControl: state.trendSlope,
+        trendTreatment: state.trendSlope,
+        treatmentTime: state.treatmentTime,
+        seed: state.seed,
+    });
+
+    const estimates = computeEstimates(data);
+
+    // Treatment line color changes at treatment time
+    const preColor = '#2563eb';
+    const postColorTreat = '#dc2626';
+
+    const traces = [
+        {
+            x: data.periods, y: data.control,
+            mode: 'markers+lines', name: 'Control',
+            marker: { color: '#2563eb', size: 6 },
+            line: { color: '#2563eb', width: 2 },
+        },
+        {
+            x: data.periods, y: data.treatment,
+            mode: 'markers+lines', name: 'Treatment',
+            marker: { color: '#dc2626', size: 6 },
+            line: { color: '#dc2626', width: 2 },
+        },
+        {
+            x: data.periods, y: data.treatmentCounterfactual,
+            mode: 'lines', name: 'Counterfactual',
+            line: { color: '#dc2626', width: 1.5, dash: 'dash' },
+            opacity: 0.5,
+        },
+    ];
+
+    const layout = plotlyDefaults({
+        xaxis: { title: 'Time Period', gridcolor: '#f0f0f0' },
+        yaxis: { title: 'Outcome', gridcolor: '#f0f0f0' },
+        shapes: [{
+            type: 'line',
+            x0: state.treatmentTime, x1: state.treatmentTime,
+            y0: 0, y1: 1, yref: 'paper',
+            line: { color: '#f59e0b', width: 2, dash: 'dot' },
+        }],
+        annotations: [{
+            x: state.treatmentTime, y: 1.05, yref: 'paper',
+            text: 'Treatment', showarrow: false,
+            font: { color: '#f59e0b', size: 12 },
+        }],
+    });
+
+    Plotly.react('chart1', traces, layout, { responsive: true, displayModeBar: false });
+
+    document.getElementById('readout1').innerHTML = `
+        <strong>DiD Estimate:</strong>
+        <span class="estimate correct">${estimates.did.toFixed(2)}</span>
+        &nbsp;|&nbsp; True effect: <span class="estimate">${state.effect.toFixed(1)}</span>
+        &nbsp;|&nbsp; Error: <span class="estimate ${Math.abs(estimates.did - state.effect) > 1 ? 'wrong' : 'correct'}">${(estimates.did - state.effect).toFixed(2)}</span>
+        <br>
+        <small>The dashed line shows where the treatment group <em>would have been</em> without the treatment (the counterfactual).</small>
+    `;
+}
+
+
+// ── SANDBOX 2 ───────────────────────────────────────────────
+
+function initSandbox2() {
+    const controls = document.getElementById('controls2');
+    const state = { effect: 5, noise: 0.8, trendSlope: 1.0, levelGap: 8, seed: 77 };
+
+    createSlider(controls, {
+        label: 'Treatment Effect', id: 's2-effect',
+        min: 0, max: 15, step: 0.5, value: state.effect,
+        format: v => v.toFixed(1),
+        onChange: v => { state.effect = v; updateSandbox2(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Trend Slope', id: 's2-trend',
+        min: 0, max: 3, step: 0.1, value: state.trendSlope,
+        format: v => v.toFixed(1),
+        onChange: v => { state.trendSlope = v; updateSandbox2(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Level Gap (Treat − Ctrl)', id: 's2-gap',
+        min: 0, max: 15, step: 0.5, value: state.levelGap,
+        format: v => v.toFixed(1),
+        onChange: v => { state.levelGap = v; updateSandbox2(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Noise', id: 's2-noise',
+        min: 0, max: 3, step: 0.25, value: state.noise,
+        format: v => v.toFixed(2),
+        onChange: v => { state.noise = v; updateSandbox2(state); },
+    });
+
+    createButton(controls, {
+        label: '↻ New Random Draw',
+        onClick: () => { state.seed = Math.floor(Math.random() * 10000); updateSandbox2(state); },
+    });
+
+    updateSandbox2(state);
+}
+
+function updateSandbox2(state) {
+    const data = generateDiDData({
+        effect: state.effect,
+        noise: state.noise,
+        trendControl: state.trendSlope,
+        trendTreatment: state.trendSlope,
+        baseControl: 10,
+        baseTreatment: 10 + state.levelGap,
+        treatmentTime: 10,
+        seed: state.seed,
+    });
+
+    const estimates = computeEstimates(data);
+
+    const traces = [
+        {
+            x: data.periods, y: data.control,
+            mode: 'markers+lines', name: 'Control',
+            marker: { color: '#2563eb', size: 6 },
+            line: { color: '#2563eb', width: 2 },
+        },
+        {
+            x: data.periods, y: data.treatment,
+            mode: 'markers+lines', name: 'Treatment',
+            marker: { color: '#dc2626', size: 6 },
+            line: { color: '#dc2626', width: 2 },
+        },
+    ];
+
+    const layout = plotlyDefaults({
+        xaxis: { title: 'Time Period' },
+        yaxis: { title: 'Outcome' },
+        shapes: [{
+            type: 'line',
+            x0: 10, x1: 10, y0: 0, y1: 1, yref: 'paper',
+            line: { color: '#f59e0b', width: 2, dash: 'dot' },
+        }],
+    });
+
+    Plotly.react('chart2', traces, layout, { responsive: true, displayModeBar: false });
+
+    // Build estimate comparison cards
+    const tolerance = 1.5;
+    const biasBA = estimates.beforeAfter - state.effect;
+    const biasSD = estimates.simpleDiff - state.effect;
+    const biasDiD = estimates.did - state.effect;
+
+    document.getElementById('estimates2').innerHTML = `
+        <div class="estimate-card ${Math.abs(biasBA) < tolerance ? 'correct' : 'wrong'}">
+            <h3>Before/After</h3>
+            <div class="value">${estimates.beforeAfter.toFixed(2)}</div>
+            <div class="bias-label">bias: ${biasBA >= 0 ? '+' : ''}${biasBA.toFixed(2)}</div>
+        </div>
+        <div class="estimate-card ${Math.abs(biasSD) < tolerance ? 'correct' : 'wrong'}">
+            <h3>Simple Difference</h3>
+            <div class="value">${estimates.simpleDiff.toFixed(2)}</div>
+            <div class="bias-label">bias: ${biasSD >= 0 ? '+' : ''}${biasSD.toFixed(2)}</div>
+        </div>
+        <div class="estimate-card ${Math.abs(biasDiD) < tolerance ? 'correct' : 'wrong'}">
+            <h3>Diff-in-Diff</h3>
+            <div class="value">${estimates.did.toFixed(2)}</div>
+            <div class="bias-label">bias: ${biasDiD >= 0 ? '+' : ''}${biasDiD.toFixed(2)}</div>
+        </div>
+    `;
+
+    // Explain what's happening
+    let explanation = '';
+    if (state.trendSlope > 0.3 && state.levelGap > 2) {
+        explanation = `With a trend of ${state.trendSlope.toFixed(1)}/period, the <strong>Before/After</strong> estimate
+            is contaminated by the upward drift — it thinks the trend is part of the treatment effect
+            (bias: ${biasBA >= 0 ? '+' : ''}${biasBA.toFixed(2)}).
+            The <strong>Simple Difference</strong> is thrown off by the ${state.levelGap.toFixed(1)}-unit level gap
+            between groups (bias: ${biasSD >= 0 ? '+' : ''}${biasSD.toFixed(2)}).
+            <strong>DiD</strong> cancels both problems.`;
+    } else if (state.trendSlope > 0.3) {
+        explanation = `The trend contaminates Before/After but the level gap is small, so Simple Difference
+            happens to work here. DiD works regardless.`;
+    } else if (state.levelGap > 2) {
+        explanation = `No trend means Before/After works fine, but the level gap makes Simple Difference
+            biased. DiD handles both cases.`;
+    } else {
+        explanation = `With no trend and no level gap, all three estimators work. DiD is overkill here —
+            but in practice, you almost always have both trends and level differences.`;
+    }
+
+    document.getElementById('readout2').innerHTML = `
+        <p>${explanation}</p>
+        <p style="margin-top:0.5em"><small>True effect: <strong>${state.effect.toFixed(1)}</strong>.
+        Green = within ±${tolerance} of truth. Red = biased.</small></p>
+    `;
+}
+
+
+// ── SANDBOX 3 ───────────────────────────────────────────────
+
+function initSandbox3() {
+    const controls = document.getElementById('controls3');
+    const state = { effect: 5, noise: 0.8, trendSlope: 0.5, divergence: 0, seed: 123 };
+
+    createSlider(controls, {
+        label: 'Treatment Effect', id: 's3-effect',
+        min: 0, max: 15, step: 0.5, value: state.effect,
+        format: v => v.toFixed(1),
+        onChange: v => { state.effect = v; updateSandbox3(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Trend Divergence', id: 's3-divergence',
+        min: -5, max: 5, step: 0.25, value: state.divergence,
+        format: v => v.toFixed(2),
+        onChange: v => { state.divergence = v; updateSandbox3(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Noise', id: 's3-noise',
+        min: 0, max: 3, step: 0.25, value: state.noise,
+        format: v => v.toFixed(2),
+        onChange: v => { state.noise = v; updateSandbox3(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Trend Slope', id: 's3-trend',
+        min: 0, max: 2, step: 0.1, value: state.trendSlope,
+        format: v => v.toFixed(1),
+        onChange: v => { state.trendSlope = v; updateSandbox3(state); },
+    });
+
+    createButton(controls, {
+        label: '↻ New Random Draw',
+        onClick: () => { state.seed = Math.floor(Math.random() * 10000); updateSandbox3(state); },
+    });
+
+    updateSandbox3(state);
+}
+
+function updateSandbox3(state) {
+    const data = generateDiDData({
+        effect: state.effect,
+        noise: state.noise,
+        trendControl: state.trendSlope,
+        trendTreatment: state.trendSlope,
+        trendDivergence: state.divergence,
+        treatmentTime: 10,
+        seed: state.seed,
+    });
+
+    const estimates = computeEstimates(data);
+    const bias = estimates.did - state.effect;
+
+    // Generate the "true" parallel counterfactual (no divergence)
+    const dataParallel = generateDiDData({
+        effect: state.effect,
+        noise: state.noise * 0.01,
+        trendControl: state.trendSlope,
+        trendTreatment: state.trendSlope,
+        trendDivergence: 0,
+        treatmentTime: 10,
+        seed: state.seed,
+    });
+
+    const traces = [
+        {
+            x: data.periods, y: data.control,
+            mode: 'markers+lines', name: 'Control (actual)',
+            marker: { color: '#2563eb', size: 6 },
+            line: { color: '#2563eb', width: 2 },
+        },
+        {
+            x: data.periods, y: data.treatment,
+            mode: 'markers+lines', name: 'Treatment',
+            marker: { color: '#dc2626', size: 6 },
+            line: { color: '#dc2626', width: 2 },
+        },
+    ];
+
+    // Show the parallel control counterfactual when divergence is nonzero
+    if (Math.abs(state.divergence) > 0.1) {
+        traces.push({
+            x: dataParallel.periods, y: dataParallel.control,
+            mode: 'lines', name: 'Control (if parallel)',
+            line: { color: '#2563eb', width: 1.5, dash: 'dash' },
+            opacity: 0.4,
+        });
+    }
+
+    const layout = plotlyDefaults({
+        xaxis: { title: 'Time Period' },
+        yaxis: { title: 'Outcome' },
+        shapes: [{
+            type: 'line',
+            x0: 10, x1: 10, y0: 0, y1: 1, yref: 'paper',
+            line: { color: '#f59e0b', width: 2, dash: 'dot' },
+        }],
+    });
+
+    Plotly.react('chart3', traces, layout, { responsive: true, displayModeBar: false });
+
+    const absBias = Math.abs(bias);
+    let severity, message;
+    if (absBias < 1) {
+        severity = 'correct';
+        message = `Parallel trends hold (approximately). DiD estimate is reliable.`;
+    } else if (absBias < 3) {
+        severity = 'wrong';
+        message = `Parallel trends are violated. DiD is picking up the divergence as if it were part of the treatment effect.
+            The ${state.divergence > 0 ? 'upward' : 'downward'} drift in the control group makes DiD
+            ${state.divergence > 0 ? 'underestimate' : 'overestimate'} the true effect.`;
+    } else {
+        severity = 'wrong';
+        message = `Severe violation. The DiD estimate is badly biased (off by ${bias.toFixed(2)}).
+            The dashed blue line shows where the control group <em>would need to be</em> for parallel
+            trends to hold. The gap between solid and dashed blue lines is the source of bias.`;
+    }
+
+    document.getElementById('readout3').innerHTML = `
+        <strong>DiD Estimate:</strong>
+        <span class="estimate ${severity}">${estimates.did.toFixed(2)}</span>
+        &nbsp;|&nbsp; True effect: <span class="estimate">${state.effect.toFixed(1)}</span>
+        &nbsp;|&nbsp; Bias: <span class="estimate ${severity}">${bias >= 0 ? '+' : ''}${bias.toFixed(2)}</span>
+        <br><br>
+        <p>${message}</p>
+        <p style="margin-top:0.5em"><small>
+            This is why researchers always show pre-treatment trends in DiD papers.
+            If the groups were already diverging before treatment, the estimate is suspect.
+            In the Olympic analysis, you'd check: were host countries already winning more medals
+            <em>before</em> they were selected to host?
+        </small></p>
+    `;
+}
+
+
+// ── SANDBOX 4 ───────────────────────────────────────────────
+
+function initSandbox4() {
+    const controls = document.getElementById('controls4');
+    const state = {
+        nCountries: 12,
+        nGames: 16,
+        hostEffect: 8,
+        noise: 3,
+        delegationEffect: 5,
+        seed: 456,
+    };
+
+    createSlider(controls, {
+        label: 'Host Medal Boost', id: 's4-effect',
+        min: 0, max: 20, step: 1, value: state.hostEffect,
+        format: v => `+${v}`,
+        onChange: v => { state.hostEffect = v; updateSandbox4(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Delegation Size Effect', id: 's4-delegation',
+        min: 0, max: 15, step: 1, value: state.delegationEffect,
+        format: v => `+${v}`,
+        onChange: v => { state.delegationEffect = v; updateSandbox4(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Noise', id: 's4-noise',
+        min: 0.5, max: 8, step: 0.5, value: state.noise,
+        format: v => v.toFixed(1),
+        onChange: v => { state.noise = v; updateSandbox4(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Countries', id: 's4-countries',
+        min: 4, max: 20, step: 1, value: state.nCountries,
+        format: v => v,
+        onChange: v => { state.nCountries = v; updateSandbox4(state); },
+    });
+
+    createButton(controls, {
+        label: '↻ New Simulation',
+        onClick: () => { state.seed = Math.floor(Math.random() * 10000); updateSandbox4(state); },
+    });
+
+    updateSandbox4(state);
+}
+
+function updateSandbox4(state) {
+    const rng = seededRandom(state.seed);
+    const { nCountries, nGames, hostEffect, delegationEffect, noise } = state;
+
+    // Assign host years (each country hosts at most once)
+    const hostAssignments = {};
+    const possibleHosts = Array.from({ length: nCountries }, (_, i) => i);
+    for (let g = 2; g < nGames - 2 && possibleHosts.length > 0; g += 2) {
+        const idx = Math.floor(rng() * possibleHosts.length);
+        hostAssignments[possibleHosts[idx]] = g;
+        possibleHosts.splice(idx, 1);
+    }
+
+    // Generate medal data
+    const countries = [];
+    for (let c = 0; c < nCountries; c++) {
+        const baseMedals = 10 + rng() * 40;
+        const trend = (rng() - 0.5) * 0.5;
+        const medals = [];
+        const isHost = [];
+
+        for (let g = 0; g < nGames; g++) {
+            const hosting = hostAssignments[c] === g;
+            const boost = hosting ? hostEffect + delegationEffect : 0;
+            const m = Math.max(0, Math.round(
+                baseMedals + trend * g + boost + normalRandom(rng, 0, noise)
+            ));
+            medals.push(m);
+            isHost.push(hosting);
+        }
+
+        countries.push({ id: c, baseMedals, medals, isHost, hostGame: hostAssignments[c] });
+    }
+
+    // Compute pooled DiD estimate
+    let sumTreatBefore = 0, nTreatBefore = 0;
+    let sumTreatAfter = 0, nTreatAfter = 0;
+    let sumCtrlBefore = 0, nCtrlBefore = 0;
+    let sumCtrlAfter = 0, nCtrlAfter = 0;
+
+    for (const c of countries) {
+        if (c.hostGame === undefined) {
+            // Pure control: use all periods
+            for (let g = 0; g < nGames; g++) {
+                // Use midpoint as rough before/after split
+                if (g < nGames / 2) { sumCtrlBefore += c.medals[g]; nCtrlBefore++; }
+                else { sumCtrlAfter += c.medals[g]; nCtrlAfter++; }
+            }
+        } else {
+            for (let g = 0; g < nGames; g++) {
+                if (g < c.hostGame) { sumTreatBefore += c.medals[g]; nTreatBefore++; }
+                else { sumTreatAfter += c.medals[g]; nTreatAfter++; }
+            }
+        }
+    }
+
+    const didEstimate = nTreatBefore > 0 && nCtrlBefore > 0
+        ? (sumTreatAfter / nTreatAfter - sumTreatBefore / nTreatBefore)
+          - (sumCtrlAfter / nCtrlAfter - sumCtrlBefore / nCtrlBefore)
+        : NaN;
+
+    const trueEffect = hostEffect + delegationEffect;
+
+    // Plot: show a few highlighted host countries + faded others
+    const traces = [];
+    const colors = ['#dc2626', '#2563eb', '#16a34a', '#9333ea', '#f59e0b', '#06b6d4',
+                     '#ec4899', '#84cc16', '#f97316', '#6366f1'];
+
+    const hostCountries = countries.filter(c => c.hostGame !== undefined).slice(0, 5);
+    const nonHostCountries = countries.filter(c => c.hostGame === undefined).slice(0, 3);
+
+    // Faded non-host countries
+    for (const c of nonHostCountries) {
+        traces.push({
+            x: Array.from({ length: nGames }, (_, i) => i),
+            y: c.medals,
+            mode: 'lines', name: `Country ${c.id} (ctrl)`,
+            line: { color: '#94a3b8', width: 1 },
+            opacity: 0.4,
+            showlegend: false,
+        });
+    }
+
+    // Highlighted host countries
+    for (let i = 0; i < hostCountries.length; i++) {
+        const c = hostCountries[i];
+        const color = colors[i % colors.length];
+
+        traces.push({
+            x: Array.from({ length: nGames }, (_, i) => i),
+            y: c.medals,
+            mode: 'markers+lines',
+            name: `Country ${c.id} (hosts game ${c.hostGame})`,
+            marker: {
+                color: c.medals.map((_, g) => g === c.hostGame ? '#f59e0b' : color),
+                size: c.medals.map((_, g) => g === c.hostGame ? 12 : 5),
+                symbol: c.medals.map((_, g) => g === c.hostGame ? 'star' : 'circle'),
+            },
+            line: { color, width: 2 },
+        });
+    }
+
+    const layout = plotlyDefaults({
+        xaxis: { title: 'Olympic Games (index)', dtick: 2 },
+        yaxis: { title: 'Medals' },
+        legend: { font: { size: 11 } },
+    });
+
+    Plotly.react('chart4', traces, layout, { responsive: true, displayModeBar: false });
+
+    const bias = didEstimate - trueEffect;
+    const severity = Math.abs(bias) < 3 ? 'correct' : 'wrong';
+
+    document.getElementById('readout4').innerHTML = `
+        <strong>Pooled DiD Estimate:</strong>
+        <span class="estimate ${severity}">${isNaN(didEstimate) ? 'N/A' : didEstimate.toFixed(2)}</span>
+        &nbsp;|&nbsp; True total effect: <span class="estimate">${trueEffect}</span>
+        (host boost: ${hostEffect} + delegation: ${delegationEffect})
+        <br><br>
+        <p>
+            Stars (★) mark hosting years. Notice the spike in medals at those points.
+            The DiD estimator pools across all host countries to estimate the average effect.
+        </p>
+        <p style="margin-top:0.5em">
+            <strong>The Cremieux decomposition:</strong> In the real analysis, he separates the
+            <em>delegation size effect</em> (hosts send more athletes → more chances to medal)
+            from the <em>residual host advantage</em> (judging bias in subjective sports).
+            Try setting the delegation effect to 0 to see what the "pure" hosting advantage looks like,
+            or crank it up to see how delegation size dominates.
+        </p>
+    `;
+}
+</script>
+
+</body>
+</html>
