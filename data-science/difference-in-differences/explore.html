@@ -51,6 +51,60 @@
     </section>
 
     <!-- ════════════════════════════════════════════════════════ -->
+    <details class="notation-ref">
+        <summary>Notation Reference</summary>
+        <div class="notation-content">
+            <table>
+                <thead>
+                    <tr><th>Symbol</th><th>Name</th><th>Meaning</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="notation-symbol">$Y_{i,t}$</td>
+                        <td>Observation</td>
+                        <td>Outcome for unit $i$ at time $t$. This is what the dots on the charts show — raw data, one per group per time period.</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\bar{Y}$</td>
+                        <td>Sample mean</td>
+                        <td>Average of observations. The bar means "mean" (same convention as physics). Superscripts and subscripts specify <em>which</em> mean.</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\bar{Y}^{\text{treat}}_{\text{after}}$</td>
+                        <td>Group-period mean</td>
+                        <td>Average outcome for the <strong>treatment group</strong> in the <strong>post-treatment</strong> period. Computed by averaging all treatment-group dots to the right of the treatment line.</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\bar{Y}^{\text{ctrl}}_{\text{before}}$</td>
+                        <td>Group-period mean</td>
+                        <td>Average outcome for the <strong>control group</strong> in the <strong>pre-treatment</strong> period. Similarly for other superscript/subscript combinations.</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\tau$</td>
+                        <td>Treatment effect</td>
+                        <td>The true causal effect of treatment. This is the unknown quantity we're trying to estimate. In econometrics, $\tau$ is conventional for treatment effects (where a physicist might expect $\Delta$).</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\hat{\tau}$</td>
+                        <td>Estimated treatment effect</td>
+                        <td>Our estimate of $\tau$ from data. The hat ($\hat{}$) means "estimated" — same convention as physics. $\hat{\tau}_{\text{DiD}}$ is a <strong>single scalar</strong>, not a per-time-point value.</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\hat{\tau}_{\text{DiD}}$</td>
+                        <td>DiD estimator</td>
+                        <td>The difference-in-differences estimate: $(\bar{Y}^{\text{treat}}_{\text{after}} - \bar{Y}^{\text{treat}}_{\text{before}}) - (\bar{Y}^{\text{ctrl}}_{\text{after}} - \bar{Y}^{\text{ctrl}}_{\text{before}})$. One number summarizing the causal effect.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="notation-note">
+                <strong>Reading the charts:</strong> The plotted dots are $Y_{i,t}$ (raw observations).
+                The $\bar{Y}$ values are what you'd get by averaging dots within a region (group × period).
+                $\hat{\tau}$ collapses all of that into a single number shown in the readout below each chart.
+            </p>
+        </div>
+    </details>
+
+    <!-- ════════════════════════════════════════════════════════ -->
     <!-- SANDBOX 1: Two Groups, One Shock -->
     <!-- ════════════════════════════════════════════════════════ -->
     <section class="sandbox" id="sandbox1">
@@ -481,41 +535,115 @@ function updateSandbox1(state) {
     const preColor = '#2563eb';
     const postColorTreat = '#dc2626';
 
+    // ── Compute the four fat dots (group-period centroids) ──
+    const T = state.treatmentTime;
+    const nPeriods = data.periods.length;
+    const mean = (arr, start, end) => {
+        const s = arr.slice(start, end);
+        return s.reduce((a, b) => a + b, 0) / s.length;
+    };
+    const meanTime = (start, end) => (start + end - 1) / 2;
+
+    const dots = {
+        ctrlPre:  { x: meanTime(0, T), y: mean(data.control, 0, T) },
+        ctrlPost: { x: meanTime(T, nPeriods), y: mean(data.control, T, nPeriods) },
+        treatPre: { x: meanTime(0, T), y: mean(data.treatment, 0, T) },
+        treatPost:{ x: meanTime(T, nPeriods), y: mean(data.treatment, T, nPeriods) },
+    };
+
+    // Where the treatment dot WOULD be if it tracked the control slope
+    const ctrlSlope = dots.ctrlPost.y - dots.ctrlPre.y;
+    const counterfactualPost = dots.treatPre.y + ctrlSlope;
+
     const traces = [
+        // Raw data (faded slightly to let dots stand out)
         {
             x: data.periods, y: data.control,
-            mode: 'markers+lines', name: 'Control',
-            marker: { color: '#2563eb', size: 6 },
-            line: { color: '#2563eb', width: 2 },
+            mode: 'markers+lines', name: 'Control (data)',
+            marker: { color: '#2563eb', size: 5, opacity: 0.5 },
+            line: { color: '#2563eb', width: 1.5, opacity: 0.4 },
         },
         {
             x: data.periods, y: data.treatment,
-            mode: 'markers+lines', name: 'Treatment',
-            marker: { color: '#dc2626', size: 6 },
-            line: { color: '#dc2626', width: 2 },
+            mode: 'markers+lines', name: 'Treatment (data)',
+            marker: { color: '#dc2626', size: 5, opacity: 0.5 },
+            line: { color: '#dc2626', width: 1.5, opacity: 0.4 },
         },
+        // Counterfactual trend line
         {
             x: data.periods, y: data.treatmentCounterfactual,
             mode: 'lines', name: 'Counterfactual',
             line: { color: '#dc2626', width: 1.5, dash: 'dash' },
-            opacity: 0.5,
+            opacity: 0.3,
+        },
+
+        // ── The Four Fat Dots ──
+        // Control dots (blue)
+        {
+            x: [dots.ctrlPre.x, dots.ctrlPost.x],
+            y: [dots.ctrlPre.y, dots.ctrlPost.y],
+            mode: 'markers+lines', name: 'Control (Ȳ)',
+            marker: { color: '#2563eb', size: 16, symbol: 'circle',
+                      line: { color: '#1e40af', width: 2 } },
+            line: { color: '#2563eb', width: 2.5 },
+        },
+        // Treatment dots (red)
+        {
+            x: [dots.treatPre.x, dots.treatPost.x],
+            y: [dots.treatPre.y, dots.treatPost.y],
+            mode: 'markers+lines', name: 'Treatment (Ȳ)',
+            marker: { color: '#dc2626', size: 16, symbol: 'circle',
+                      line: { color: '#991b1b', width: 2 } },
+            line: { color: '#dc2626', width: 2.5 },
+        },
+        // Counterfactual dot (where treatment WOULD have been)
+        {
+            x: [dots.treatPre.x, dots.ctrlPost.x],
+            y: [dots.treatPre.y, counterfactualPost],
+            mode: 'markers+lines', name: 'Counterfactual (Ȳ)',
+            marker: { color: '#f59e0b', size: 14, symbol: 'diamond',
+                      line: { color: '#92400e', width: 2 } },
+            line: { color: '#f59e0b', width: 2, dash: 'dash' },
         },
     ];
+
+    // τ̂ arrow: vertical distance from counterfactual to actual
+    const tauArrowShapes = [{
+        type: 'line',
+        x0: dots.treatPost.x, x1: dots.treatPost.x,
+        y0: counterfactualPost, y1: dots.treatPost.y,
+        line: { color: '#16a34a', width: 3 },
+    }];
 
     const layout = plotlyDefaults({
         xaxis: { title: 'Time Period', gridcolor: '#f0f0f0' },
         yaxis: { title: 'Outcome', gridcolor: '#f0f0f0' },
-        shapes: [{
-            type: 'line',
-            x0: state.treatmentTime, x1: state.treatmentTime,
-            y0: 0, y1: 1, yref: 'paper',
-            line: { color: '#f59e0b', width: 2, dash: 'dot' },
-        }],
-        annotations: [{
-            x: state.treatmentTime, y: 1.05, yref: 'paper',
-            text: 'Treatment', showarrow: false,
-            font: { color: '#f59e0b', size: 12 },
-        }],
+        shapes: [
+            // Treatment time line
+            {
+                type: 'line',
+                x0: state.treatmentTime, x1: state.treatmentTime,
+                y0: 0, y1: 1, yref: 'paper',
+                line: { color: '#f59e0b', width: 2, dash: 'dot' },
+            },
+            // τ̂ arrow
+            ...tauArrowShapes,
+        ],
+        annotations: [
+            {
+                x: state.treatmentTime, y: 1.05, yref: 'paper',
+                text: 'Treatment', showarrow: false,
+                font: { color: '#f59e0b', size: 12 },
+            },
+            // Label the τ̂ gap
+            {
+                x: dots.treatPost.x + 0.8,
+                y: (counterfactualPost + dots.treatPost.y) / 2,
+                text: `τ̂ = ${estimates.did.toFixed(1)}`,
+                showarrow: false,
+                font: { color: '#16a34a', size: 13, family: 'monospace' },
+            },
+        ],
     });
 
     Plotly.react('chart1', traces, layout, { responsive: true, displayModeBar: false });
@@ -526,7 +654,12 @@ function updateSandbox1(state) {
         &nbsp;|&nbsp; True effect: <span class="estimate">${state.effect.toFixed(1)}</span>
         &nbsp;|&nbsp; Error: <span class="estimate ${Math.abs(estimates.did - state.effect) > 1 ? 'wrong' : 'correct'}">${(estimates.did - state.effect).toFixed(2)}</span>
         <br>
-        <small>The dashed line shows where the treatment group <em>would have been</em> without the treatment (the counterfactual).</small>
+        <small>
+            <strong>Fat dots</strong> = group-period means ($\\bar{Y}$).
+            <strong style="color:#2563eb">Blue line</strong> = control group's change.
+            <strong style="color:#f59e0b">◆ Gold diamond</strong> = where treatment would be if it tracked the control slope.
+            <strong style="color:#16a34a">Green bar</strong> = $\\hat{\\tau}_{\\text{DiD}}$, the estimated treatment effect.
+        </small>
     `;
 }
 
