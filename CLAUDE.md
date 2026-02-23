@@ -35,6 +35,30 @@ Interactive learning environment for data science, finance, and ML.
 - `seededRandom(seed)` — reproducible pseudo-random number generator
 - `normalRandom(rng, mean, std)` — Box-Muller normal distribution
 
+## Technical Notes
+
+- **KaTeX in dynamic content**: Call `renderAllMath()` after any `innerHTML` update that contains LaTeX — auto-render only runs once on page load
+- **`generateDiDData()`** supports: `trendDivergence` (breaks parallel trends) and `anticipation` (leaks treatment into pre-period). Both are demonstrated in Sandbox 3.
+- **Notation reference**: collapsible `<details>` panel using `.notation-ref` CSS class. Add new entries as concepts are introduced.
+- **Serve locally**: `./serve.sh` or `python3 -m http.server 8080` from repo root
+
+## Current State and Next Steps
+
+**Completed:** DiD exploration with 5 sandboxes:
+1. Two Groups, One Shock (with four-dot centroid visualization)
+2. Why Not Just Before/After? (three competing estimators)
+3. Parallel Trends + Anticipation (two assumption violations)
+4. Olympic Connection (multi-country staggered treatment)
+5. Rosetta Stone (R + Python side by side)
+
+**Natural next explorations (in rough order of priority):**
+- **Permutation testing** — distribution-free hypothesis testing, connects to "is this DiD result noise?"
+- **Fixed effects** — what "controlling for" means mechanically
+- **Decomposition** — separating delegation size from judging bias (Cremieux's key insight)
+- **Event studies** — per-period treatment effects, the standard parallel trends diagnostic
+
+**Anchoring article:** Cremieux, "Why Do Olympic Hosts Win More Medals?" (https://www.cremieux.xyz/p/why-do-olympic-hosts-win-more-medals) — code not publicly available, author uses R/fixest.
+
 ## User Context
 
-The learner has a physics degree, is intermediate in data science/finance/ML, comfortable with graduate-level math. Prefers exploration over lectures. Has working Python skills but prefers to minimize friction. Developing fluency in both Python and R for statistical work.
+The learner has a physics degree, is intermediate in data science/finance/ML, comfortable with graduate-level math. Prefers exploration over lectures. Has working Python skills but prefers to minimize friction. Developing fluency in both Python and R for statistical work. Maps physics intuitions to stats concepts (systematic error → bias, statistical error → variance, chi-squared → p-values). Reads Cremieux (Substack), familiar with Judea Pearl's "Book of Why," aware of Taleb's critiques of CLT overuse in fat-tailed domains.
