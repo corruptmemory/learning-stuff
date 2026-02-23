@@ -94,12 +94,33 @@
                         <td>DiD estimator</td>
                         <td>The difference-in-differences estimate: $(\bar{Y}^{\text{treat}}_{\text{after}} - \bar{Y}^{\text{treat}}_{\text{before}}) - (\bar{Y}^{\text{ctrl}}_{\text{after}} - \bar{Y}^{\text{ctrl}}_{\text{before}})$. One number summarizing the causal effect.</td>
                     </tr>
+                    <tr>
+                        <td class="notation-symbol">$\text{Bias}(\hat{\tau})$</td>
+                        <td>Bias</td>
+                        <td>Systematic error: $E[\hat{\tau}] - \tau$. The gap between the estimator's <em>expected value</em> (what you'd get if you averaged infinitely many estimates) and the true parameter. Unlike noise/variance, bias doesn't shrink with more data — it's a structural flaw in the estimator. Physics analog: <strong>systematic error</strong> (a miscalibrated ruler), not statistical error (a shaky hand).</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$\text{Var}(\hat{\tau})$</td>
+                        <td>Variance</td>
+                        <td>Random scatter around the expected value. <em>Does</em> shrink with more data (law of large numbers). Physics analog: <strong>statistical error</strong>. An unbiased estimator with high variance gives noisy but on-average-correct answers.</td>
+                    </tr>
+                    <tr>
+                        <td class="notation-symbol">$E[\cdot]$</td>
+                        <td>Expected value</td>
+                        <td>The theoretical average over infinitely many repetitions. $E[\hat{\tau}] = \tau$ means the estimator is <strong>unbiased</strong>: it gets the right answer on average, even if individual estimates are noisy.</td>
+                    </tr>
                 </tbody>
             </table>
             <p class="notation-note">
                 <strong>Reading the charts:</strong> The plotted dots are $Y_{i,t}$ (raw observations).
                 The $\bar{Y}$ values are what you'd get by averaging dots within a region (group × period).
                 $\hat{\tau}$ collapses all of that into a single number shown in the readout below each chart.
+            </p>
+            <p class="notation-note" style="margin-top: 0.5rem;">
+                <strong>Bias vs. variance in Sandbox 2:</strong> The Before/After and Simple Difference estimators
+                have <em>bias</em> — they're systematically wrong regardless of sample size. DiD is unbiased
+                (under parallel trends), so its error is pure variance — crank up the noise and watch it scatter
+                around the true value rather than being stuck on the wrong one.
             </p>
         </div>
     </details>
@@ -163,14 +184,15 @@
         <h2>Sandbox 3: The Parallel Trends Assumption</h2>
         <div class="description">
             <p>
-                DiD's crucial assumption: <em>in the absence of treatment, both groups would have
-                followed parallel trends</em>. You can never prove this (the counterfactual doesn't
-                exist), but you can check if pre-treatment trends are parallel — and you can see
-                what happens when they're not.
+                DiD rests on assumptions that can't be proven — only made plausible.
+                The two most important: (1) <em>parallel trends</em> — without treatment, both groups
+                would have followed the same trajectory; (2) <em>no anticipation</em> — the treatment
+                group doesn't start responding before treatment officially begins.
             </p>
             <p>
-                Use the <strong>trend divergence</strong> slider to break the parallel trends assumption.
-                Watch the DiD estimate become biased.
+                Use <strong>trend divergence</strong> to break parallel trends,
+                and <strong>anticipation</strong> to leak the effect into the pre-treatment period.
+                Watch how each violation biases DiD in a different way — and try both together.
             </p>
         </div>
 
@@ -425,6 +447,7 @@ function generateDiDData(opts) {
         effect = 5,
         noise = 1,
         trendDivergence = 0,
+        anticipation = 0,
         seed = 42,
     } = opts;
 
@@ -442,8 +465,16 @@ function generateDiDData(opts) {
         const yc = baseControl + trendControl * t + controlDivergence + normalRandom(rng, 0, noise);
         control.push(yc);
 
-        // Treatment group: gets effect after treatmentTime
-        const treated = t >= treatmentTime ? effect : 0;
+        // Treatment group: gets effect after treatmentTime,
+        // with possible anticipation (gradual ramp-up before treatment)
+        let treated = 0;
+        if (t >= treatmentTime) {
+            treated = effect;
+        } else if (anticipation > 0 && t >= treatmentTime - anticipation) {
+            // Linear ramp from 0 to effect over the anticipation window
+            const progress = (t - (treatmentTime - anticipation)) / anticipation;
+            treated = effect * progress;
+        }
         const yt = baseTreatment + trendTreatment * t + treated + normalRandom(rng, 0, noise);
         treatment.push(yt);
 
@@ -661,6 +692,7 @@ function updateSandbox1(state) {
             <strong style="color:#16a34a">Green bar</strong> = $\\hat{\\tau}_{\\text{DiD}}$, the estimated treatment effect.
         </small>
     `;
+    renderAllMath();
 }
 
 
@@ -796,6 +828,7 @@ function updateSandbox2(state) {
         <p style="margin-top:0.5em"><small>True effect: <strong>${state.effect.toFixed(1)}</strong>.
         Green = within ±${tolerance} of truth. Red = biased.</small></p>
     `;
+    renderAllMath();
 }
 
 
@@ -803,7 +836,7 @@ function updateSandbox2(state) {
 
 function initSandbox3() {
     const controls = document.getElementById('controls3');
-    const state = { effect: 5, noise: 0.8, trendSlope: 0.5, divergence: 0, seed: 123 };
+    const state = { effect: 5, noise: 0.8, trendSlope: 0.5, divergence: 0, anticipation: 0, seed: 123 };
 
     createSlider(controls, {
         label: 'Treatment Effect', id: 's3-effect',
@@ -817,6 +850,13 @@ function initSandbox3() {
         min: -5, max: 5, step: 0.25, value: state.divergence,
         format: v => v.toFixed(2),
         onChange: v => { state.divergence = v; updateSandbox3(state); },
+    });
+
+    createSlider(controls, {
+        label: 'Anticipation (periods)', id: 's3-anticipation',
+        min: 0, max: 8, step: 1, value: state.anticipation,
+        format: v => v === 0 ? 'none' : `${v}`,
+        onChange: v => { state.anticipation = v; updateSandbox3(state); },
     });
 
     createSlider(controls, {
@@ -848,6 +888,7 @@ function updateSandbox3(state) {
         trendControl: state.trendSlope,
         trendTreatment: state.trendSlope,
         trendDivergence: state.divergence,
+        anticipation: state.anticipation,
         treatmentTime: 10,
         seed: state.seed,
     });
@@ -855,13 +896,14 @@ function updateSandbox3(state) {
     const estimates = computeEstimates(data);
     const bias = estimates.did - state.effect;
 
-    // Generate the "true" parallel counterfactual (no divergence)
-    const dataParallel = generateDiDData({
+    // Generate clean references for comparison
+    const dataClean = generateDiDData({
         effect: state.effect,
         noise: state.noise * 0.01,
         trendControl: state.trendSlope,
         trendTreatment: state.trendSlope,
         trendDivergence: 0,
+        anticipation: 0,
         treatmentTime: 10,
         seed: state.seed,
     });
@@ -884,40 +926,103 @@ function updateSandbox3(state) {
     // Show the parallel control counterfactual when divergence is nonzero
     if (Math.abs(state.divergence) > 0.1) {
         traces.push({
-            x: dataParallel.periods, y: dataParallel.control,
+            x: dataClean.periods, y: dataClean.control,
             mode: 'lines', name: 'Control (if parallel)',
             line: { color: '#2563eb', width: 1.5, dash: 'dash' },
             opacity: 0.4,
         });
     }
 
+    // Show the no-anticipation treatment counterfactual when anticipation is active
+    if (state.anticipation > 0) {
+        const dataNoAnticipation = generateDiDData({
+            effect: state.effect,
+            noise: state.noise * 0.01,
+            trendControl: state.trendSlope,
+            trendTreatment: state.trendSlope,
+            trendDivergence: state.divergence,
+            anticipation: 0,
+            treatmentTime: 10,
+            seed: state.seed,
+        });
+        traces.push({
+            x: dataNoAnticipation.periods, y: dataNoAnticipation.treatment,
+            mode: 'lines', name: 'Treatment (no anticipation)',
+            line: { color: '#dc2626', width: 1.5, dash: 'dash' },
+            opacity: 0.4,
+        });
+    }
+
+    // Shapes: treatment time line + anticipation zone
+    const shapes = [{
+        type: 'line',
+        x0: 10, x1: 10, y0: 0, y1: 1, yref: 'paper',
+        line: { color: '#f59e0b', width: 2, dash: 'dot' },
+    }];
+
+    if (state.anticipation > 0) {
+        shapes.push({
+            type: 'rect',
+            x0: 10 - state.anticipation, x1: 10,
+            y0: 0, y1: 1, yref: 'paper',
+            fillcolor: 'rgba(245, 158, 11, 0.08)',
+            line: { width: 0 },
+        });
+    }
+
+    const annotations = [];
+    if (state.anticipation > 0) {
+        annotations.push({
+            x: 10 - state.anticipation / 2,
+            y: 1.05, yref: 'paper',
+            text: 'Anticipation',
+            showarrow: false,
+            font: { color: '#f59e0b', size: 11 },
+        });
+    }
+
     const layout = plotlyDefaults({
         xaxis: { title: 'Time Period' },
         yaxis: { title: 'Outcome' },
-        shapes: [{
-            type: 'line',
-            x0: 10, x1: 10, y0: 0, y1: 1, yref: 'paper',
-            line: { color: '#f59e0b', width: 2, dash: 'dot' },
-        }],
+        shapes,
+        annotations,
     });
 
     Plotly.react('chart3', traces, layout, { responsive: true, displayModeBar: false });
 
+    // ── Build readout message ──
     const absBias = Math.abs(bias);
+    const hasDivergence = Math.abs(state.divergence) > 0.1;
+    const hasAnticipation = state.anticipation > 0;
     let severity, message;
+
     if (absBias < 1) {
         severity = 'correct';
-        message = `Parallel trends hold (approximately). DiD estimate is reliable.`;
-    } else if (absBias < 3) {
+        message = 'Assumptions hold (approximately). DiD estimate is reliable.';
+    } else if (!hasDivergence && hasAnticipation) {
         severity = 'wrong';
-        message = `Parallel trends are violated. DiD is picking up the divergence as if it were part of the treatment effect.
-            The ${state.divergence > 0 ? 'upward' : 'downward'} drift in the control group makes DiD
-            ${state.divergence > 0 ? 'underestimate' : 'overestimate'} the true effect.`;
+        message = `<strong>Anticipation violation.</strong> The treatment group starts responding
+            ${state.anticipation} period${state.anticipation > 1 ? 's' : ''} before the official treatment time.
+            This contaminates the "before" measurements — the pre-treatment mean $\\bar{Y}^{\\text{treat}}_{\\text{before}}$
+            is pulled upward, which <em>shrinks</em> the measured before→after change and makes DiD
+            <strong>underestimate</strong> the true effect.
+            The dashed red line shows where the treatment group <em>would have been</em> with no anticipation.
+            The shaded zone marks the anticipation window.`;
+    } else if (hasDivergence && !hasAnticipation) {
+        severity = 'wrong';
+        message = `<strong>Parallel trends violated.</strong> The
+            ${state.divergence > 0 ? 'upward' : 'downward'} drift in the control group makes DiD
+            ${state.divergence > 0 ? 'underestimate' : 'overestimate'} the true effect.
+            The dashed blue line shows where control <em>would need to be</em> for parallel trends to hold.`;
+    } else if (hasDivergence && hasAnticipation) {
+        severity = 'wrong';
+        message = `<strong>Double violation:</strong> both parallel trends and no-anticipation are broken.
+            Trend divergence contributes bias in one direction, anticipation in another.
+            The net bias (${bias >= 0 ? '+' : ''}${bias.toFixed(2)}) is the combined result —
+            these violations can partially cancel or compound depending on their directions.`;
     } else {
-        severity = 'wrong';
-        message = `Severe violation. The DiD estimate is badly biased (off by ${bias.toFixed(2)}).
-            The dashed blue line shows where the control group <em>would need to be</em> for parallel
-            trends to hold. The gap between solid and dashed blue lines is the source of bias.`;
+        severity = absBias < 3 ? 'wrong' : 'wrong';
+        message = `DiD estimate is biased (off by ${bias.toFixed(2)}).`;
     }
 
     document.getElementById('readout3').innerHTML = `
@@ -928,12 +1033,15 @@ function updateSandbox3(state) {
         <br><br>
         <p>${message}</p>
         <p style="margin-top:0.5em"><small>
-            This is why researchers always show pre-treatment trends in DiD papers.
-            If the groups were already diverging before treatment, the estimate is suspect.
-            In the Olympic analysis, you'd check: were host countries already winning more medals
-            <em>before</em> they were selected to host?
+            <strong>Two ways to break DiD:</strong> (1) <em>Trend divergence</em> violates parallel trends —
+            the control group drifts away from the treatment group's counterfactual trajectory.
+            (2) <em>Anticipation</em> violates the no-anticipation assumption — the treatment group
+            starts reacting before the official treatment date, contaminating the "before" period.
+            In the Olympic context: did host countries start investing more in sports <em>before</em>
+            the games, when they were selected years earlier?
         </small></p>
     `;
+    renderAllMath();
 }
 
 
@@ -1117,6 +1225,7 @@ function updateSandbox4(state) {
             or crank it up to see how delegation size dominates.
         </p>
     `;
+    renderAllMath();
 }
 </script>
 
