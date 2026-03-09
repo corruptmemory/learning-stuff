@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAssembly Runtime Model</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="../../shared/vendor/katex/katex.min.css">
+    <script src="../../shared/vendor/katex/katex.min.js"></script>
+    <script src="../../shared/vendor/katex/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="../../shared/vendor/plotly.min.js"></script>
+
+    <!-- Shared styles and utilities -->
+    <link rel="stylesheet" href="../../shared/explore.css">
+    <script src="../../shared/explore.js"></script>
+
+    <style>
+        /* ── Page-specific styles ──────────────────────────────── */
+
+        .wat-display {
+            background: #1a1a2e;
+            color: #a0a0c0;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        .wat-display code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .result-display {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 0.75rem;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-display.success {
+            background: #f0fdf4;
+            border: 2px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .result-display.error {
+            background: #fef2f2;
+            border: 2px solid var(--color-treatment);
+            color: var(--color-treatment);
+            font-size: 0.8rem;
+            word-break: break-all;
+        }
+
+        .result-display.neutral {
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            color: var(--color-text-muted);
+        }
+
+        .demo-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .demo-pair {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .demo-box {
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+        }
+
+        .demo-box h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .memory-bytes {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+
+        .memory-byte {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-bg);
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .memory-byte.written {
+            border-color: var(--color-accent);
+            background: var(--color-accent-light);
+            color: var(--color-accent);
+        }
+
+        .benchmark-status {
+            text-align: center;
+            padding: 1rem;
+            color: var(--color-text-muted);
+            font-style: italic;
+        }
+
+        .scale-toggle {
+            display: flex;
+            gap: 0;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            width: fit-content;
+        }
+
+        .scale-toggle button {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: none;
+            background: var(--color-surface);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .scale-toggle button.active {
+            background: var(--color-accent);
+            color: white;
+        }
+
+        .scale-toggle button:not(:last-child) {
+            border-right: 1px solid var(--color-border);
+        }
+
+        .lang-detail {
+            margin-top: 0.25rem;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+        }
+
+        .lang-detail.open {
+            max-height: 200px;
+        }
+
+        .lang-detail-inner {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.82rem;
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+
+        .size-bar-row {
+            cursor: pointer;
+        }
+
+        .size-bar-row:hover .size-bar-label {
+            color: var(--color-accent);
+        }
+
+        .expand-hint {
+            font-size: 0.7rem;
+            color: var(--color-text-muted);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="exploration">
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <header>
+        <h1>WebAssembly Runtime Model</h1>
+        <div class="subtitle">
+            What's actually in a .wasm file, and what happens when you run it
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="intro">
+        <p>
+            WebAssembly is a binary instruction format — a portable compilation target that runs
+            in browsers and on servers. But "compilation target" undersells it. WASM defines a
+            <em>runtime model</em>: a sandboxed stack machine with linear memory, no direct access
+            to the outside world, and a strict boundary between host and guest.
+        </p>
+        <p>
+            You can read the spec, or you can poke at it. Let's poke.
+        </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 1: What's in a .wasm File? -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox1">
+        <h2>Sandbox 1: What's in a .wasm File?</h2>
+        <div class="description">
+            <p>
+                Below is a complete, valid WASM module — hand-assembled, byte by byte.
+                It contains a single function: <code>add(a, b) -> a + b</code>.
+                Hover over the bytes to see what each one does.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div id="binary-viewer-1"></div>
+            <div class="controls" id="controls1">
+                <div style="margin-bottom: 0.5rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Equivalent WAT</div>
+                    <div class="wat-display"><code>(module
+  (func $add (export "add")
+    (param i32 i32) (result i32)
+    local.get 0
+    local.get 1
+    i32.add))</code></div>
+                </div>
+                <!-- Sliders and button injected by JS -->
+            </div>
+        </div>
+
+        <div class="result-display neutral" id="result1">Click "Run it" to execute</div>
+
+        <div class="readout">
+            This is <strong>41 bytes</strong>. The entire module. No runtime, no garbage collector,
+            no standard library. Just the function, the types, and the export. That's the WASM
+            value proposition: <em>it's exactly what you asked for, nothing more.</em>
+        </div>
+    </section>
+
+    <div class="connection">
+        Now you've seen what's inside. But 41 bytes of pure logic can't do anything useful alone...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 2: The Boundary -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox2">
+        <h2>Sandbox 2: The Boundary — WASM Can't Do Anything Alone</h2>
+        <div class="description">
+            <p>
+                WASM has <strong>zero</strong> built-in I/O. No <code>console.log</code>,
+                no file access, no network. Everything goes through <em>imports</em> provided by the host.
+                The host decides what capabilities the guest gets.
+            </p>
+        </div>
+
+        <div class="demo-pair">
+            <!-- Demo A: Give it a voice -->
+            <div class="demo-box">
+                <h3>Give it a voice</h3>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+                    This module imports a <code>log</code> function. Without it, instantiation fails.
+                </p>
+                <div id="controls2a"></div>
+                <div class="result-display neutral" id="result2a">Try both buttons</div>
+            </div>
+
+            <!-- Demo B: Shared memory -->
+            <div class="demo-box">
+                <h3>Shared memory</h3>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+                    WASM writes to linear memory. JS reads the same bytes.
+                </p>
+                <div id="controls2b"></div>
+                <div class="memory-bytes" id="memory-display">
+                    <div class="memory-byte">00</div>
+                    <div class="memory-byte">00</div>
+                    <div class="memory-byte">00</div>
+                    <div class="memory-byte">00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boundary diagram -->
+        <div class="boundary-diagram">
+            <div class="boundary-side host">
+                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">Host (JS / Browser)</div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted);">
+                    Provides imports:<br>
+                    - Functions (log, fetch, ...)<br>
+                    - Memory<br>
+                    - Tables<br>
+                    - Globals
+                </div>
+            </div>
+            <div class="boundary-wall">
+                <div class="boundary-arrow">&larr;</div>
+                <div>imports</div>
+                <div style="margin: 0.5rem 0; border-left: 2px dashed var(--color-border); height: 20px;"></div>
+                <div>exports</div>
+                <div class="boundary-arrow">&rarr;</div>
+            </div>
+            <div class="boundary-side wasm">
+                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">WASM Sandbox</div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted);">
+                    Exports:<br>
+                    - Functions (add, fib, ...)<br>
+                    - Memory<br>
+                    - No direct access to DOM,<br>
+                    &nbsp;&nbsp;network, filesystem
+                </div>
+            </div>
+        </div>
+
+        <div class="readout">
+            WASM is a <em>guest</em> in someone else's house. The host decides what the guest can do.
+            In a browser, the host is JavaScript. On Cloudflare, the host is the Workers runtime.
+            Same WASM module, different capabilities — because the <em>imports</em> are different.
+        </div>
+    </section>
+
+    <div class="connection">
+        So WASM needs a host. But is it worth the trouble? When is WASM actually faster?
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 3: JS vs WASM Benchmark -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox3">
+        <h2>Sandbox 3: JS vs WASM — When Does It Actually Matter?</h2>
+        <div class="description">
+            <p>
+                The pitch is "near-native speed." But modern JS engines are <em>very good</em> at
+                optimizing hot paths. Let's measure it. Recursive Fibonacci is a good test case —
+                it's pure computation with no I/O, and the exponential call tree makes differences visible.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart3"></div>
+            <div class="controls" id="controls3"></div>
+        </div>
+
+        <div class="readout" id="readout3">
+            Run the benchmark to see results.
+        </div>
+    </section>
+
+    <div class="connection">
+        Speed depends on the workload. But it also depends on what your <em>compiler</em> brings along...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 4: The Language Tax -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox4">
+        <h2>Sandbox 4: The Language Tax</h2>
+        <div class="description">
+            <p>
+                The same trivial <code>add(a, b)</code> function — compiled from different languages.
+                The difference in binary size tells you what each language brings along: runtime, GC,
+                allocator, standard library stubs. Click a row to see what's in the binary.
+            </p>
+        </div>
+
+        <div class="scale-toggle" id="scale-toggle">
+            <button class="active" data-scale="log">Log scale</button>
+            <button data-scale="linear">Linear scale</button>
+        </div>
+
+        <div class="size-bars" id="size-bars"></div>
+
+        <div style="margin-top: 1.5rem;" id="language-tabs"></div>
+
+        <div class="readout">
+            The "language tax" is everything your compiler adds beyond your actual code. For a trivial
+            function, the tax <em>is</em> the binary. For a real application, the tax becomes a smaller
+            fraction — but it determines your floor. Go's 2.5MB floor makes it impractical for small
+            WASM modules. TinyGo and Rust (<code>no_std</code>) sit in the sweet spot.
+        </div>
+    </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- All JavaScript -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllMath();
+
+    // ── WASM Modules (hand-assembled) ─────────────────────────
+
+    // Sandbox 1: add(i32, i32) -> i32
+    const addModule = new Uint8Array([
+        0x00, 0x61, 0x73, 0x6d,  // magic: \0asm
+        0x01, 0x00, 0x00, 0x00,  // version: 1
+        // Type section (id=1)
+        0x01, 0x07, 0x01,        // section id=1, size=7, count=1
+        0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,  // (i32, i32) -> i32
+        // Function section (id=3)
+        0x03, 0x02, 0x01, 0x00,  // section id=3, size=2, count=1, type[0]
+        // Export section (id=7)
+        0x07, 0x07, 0x01,        // section id=7, size=7, count=1
+        0x03, 0x61, 0x64, 0x64, 0x00, 0x00,  // "add", kind=func, index=0
+        // Code section (id=10)
+        0x0a, 0x09, 0x01,        // section id=10, size=9, count=1
+        0x07, 0x00,              // body size=7, local count=0
+        0x20, 0x00,              // local.get 0
+        0x20, 0x01,              // local.get 1
+        0x6a,                    // i32.add
+        0x0b,                    // end
+    ]);
+
+    // Sandbox 2a: imports env.log, exports greet(i32)
+    const logModule = new Uint8Array([
+        0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+        // Type section: two types
+        0x01, 0x09, 0x02,
+        0x60, 0x01, 0x7f, 0x00,  // type 0: (i32) -> void
+        0x60, 0x01, 0x7f, 0x00,  // type 1: (i32) -> void
+        // Import section
+        0x02, 0x0b, 0x01,
+        0x03, 0x65,0x6e,0x76,  // "env"
+        0x03, 0x6c,0x6f,0x67,  // "log"
+        0x00, 0x00,              // kind=func, type=0
+        // Function section
+        0x03, 0x02, 0x01, 0x01,  // 1 function, type 1
+        // Export section
+        0x07, 0x09, 0x01,
+        0x05, 0x67,0x72,0x65,0x65,0x74, // "greet"
+        0x00, 0x01,              // kind=func, index=1
+        // Code section
+        0x0a, 0x08, 0x01,
+        0x06, 0x00,              // body size=6, 0 locals
+        0x20, 0x00,              // local.get 0
+        0x10, 0x00,              // call $log (import index 0)
+        0x0b,
+    ]);
+
+    // Sandbox 2b: memory + store(i32)
+    const memModule = new Uint8Array([
+        0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+        // Type section
+        0x01, 0x05, 0x01, 0x60, 0x01, 0x7f, 0x00,
+        // Function section
+        0x03, 0x02, 0x01, 0x00,
+        // Memory section
+        0x05, 0x03, 0x01, 0x00, 0x01,  // 1 page (64KB)
+        // Export section
+        0x07, 0x12, 0x02,
+        0x06, 0x6d,0x65,0x6d,0x6f,0x72,0x79, 0x02, 0x00,  // "memory", kind=memory, index=0
+        0x05, 0x73,0x74,0x6f,0x72,0x65, 0x00, 0x00,  // "store", kind=func, index=0
+        // Code section
+        0x0a, 0x0b, 0x01,
+        0x09, 0x00,
+        0x41, 0x00,  // i32.const 0
+        0x20, 0x00,  // local.get 0
+        0x36, 0x02, 0x00,  // i32.store align=4 offset=0
+        0x0b,
+    ]);
+
+    // Sandbox 3: recursive fibonacci
+    // (func $fib (export "fib") (param i32) (result i32)
+    //   local.get 0
+    //   i32.const 2
+    //   i32.lt_s
+    //   if (result i32)
+    //     local.get 0
+    //   else
+    //     local.get 0  i32.const 1  i32.sub  call $fib
+    //     local.get 0  i32.const 2  i32.sub  call $fib
+    //     i32.add
+    //   end)
+    const fibModule = new Uint8Array([
+        0x00, 0x61, 0x73, 0x6d,  // magic
+        0x01, 0x00, 0x00, 0x00,  // version
+        // Type section (id=1): 1 type: (i32) -> (i32)
+        0x01, 0x06, 0x01,
+        0x60, 0x01, 0x7f, 0x01, 0x7f,
+        // Function section (id=3): 1 function, type 0
+        0x03, 0x02, 0x01, 0x00,
+        // Export section (id=7): export "fib" as func 0
+        0x07, 0x07, 0x01,
+        0x03, 0x66, 0x69, 0x62,  // "fib"
+        0x00, 0x00,              // kind=func, index=0
+        // Code section (id=10)
+        0x0a, 0x1e, 0x01,       // section id=10, size=30, count=1
+        // Function body: size=28, 0 locals
+        0x1c, 0x00,
+        // Expression:
+        0x20, 0x00,              // local.get 0
+        0x41, 0x02,              // i32.const 2
+        0x48,                    // i32.lt_s
+        0x04, 0x7f,              // if (result i32)
+          0x20, 0x00,            //   local.get 0
+        0x05,                    // else
+          0x20, 0x00,            //   local.get 0
+          0x41, 0x01,            //   i32.const 1
+          0x6b,                  //   i32.sub
+          0x10, 0x00,            //   call 0 ($fib)
+          0x20, 0x00,            //   local.get 0
+          0x41, 0x02,            //   i32.const 2
+          0x6b,                  //   i32.sub
+          0x10, 0x00,            //   call 0 ($fib)
+          0x6a,                  //   i32.add
+        0x0b,                    // end (if)
+        0x0b,                    // end (function)
+    ]);
+
+    // ── Sandbox 1: Binary Viewer + add ────────────────────────
+
+    const binaryContainer = document.getElementById('binary-viewer-1');
+    createBinaryViewer(binaryContainer, addModule, [
+        { start: 0,  end: 4,  cls: 'magic',        label: 'Magic number (\\0asm)' },
+        { start: 4,  end: 8,  cls: 'version',      label: 'Version (1)' },
+        { start: 8,  end: 9,  cls: 'section-type',  label: 'Type section' },
+        { start: 9,  end: 17, cls: 'section-data',  label: 'Type section data' },
+        { start: 17, end: 18, cls: 'section-type',  label: 'Function section' },
+        { start: 18, end: 21, cls: 'section-data',  label: 'Function section data' },
+        { start: 21, end: 22, cls: 'section-type',  label: 'Export section' },
+        { start: 22, end: 30, cls: 'section-data',  label: 'Export section data' },
+        { start: 30, end: 31, cls: 'section-type',  label: 'Code section' },
+        { start: 31, end: 41, cls: 'section-data',  label: 'Code section data' },
+    ]);
+
+    const controls1 = document.getElementById('controls1');
+    let argA = 3, argB = 5;
+
+    createSlider(controls1, {
+        label: 'Argument A', id: 'arg-a',
+        min: 0, max: 100, step: 1, value: 3,
+        onChange: v => { argA = v; }
+    });
+
+    createSlider(controls1, {
+        label: 'Argument B', id: 'arg-b',
+        min: 0, max: 100, step: 1, value: 5,
+        onChange: v => { argB = v; }
+    });
+
+    createButton(controls1, {
+        label: 'Run it',
+        onClick: async () => {
+            const result1 = document.getElementById('result1');
+            try {
+                const exports = await instantiateWasm(addModule);
+                const sum = exports.add(argA, argB);
+                result1.className = 'result-display success';
+                result1.textContent = `add(${argA}, ${argB}) = ${sum}`;
+            } catch (e) {
+                result1.className = 'result-display error';
+                result1.textContent = e.message;
+            }
+        }
+    });
+
+    // ── Sandbox 2a: Import demo ───────────────────────────────
+
+    const controls2a = document.getElementById('controls2a');
+    const result2a = document.getElementById('result2a');
+
+    createButton(controls2a, {
+        label: 'With import',
+        onClick: async () => {
+            try {
+                let loggedValue = null;
+                const exports = await instantiateWasm(logModule, {
+                    env: {
+                        log: (val) => { loggedValue = val; }
+                    }
+                });
+                exports.greet(42);
+                result2a.className = 'result-display success';
+                result2a.textContent = `log() was called with: ${loggedValue}`;
+            } catch (e) {
+                result2a.className = 'result-display error';
+                result2a.textContent = e.message;
+            }
+        }
+    });
+
+    createButton(controls2a, {
+        label: 'Without import',
+        onClick: async () => {
+            try {
+                await instantiateWasm(logModule, {});
+                result2a.className = 'result-display success';
+                result2a.textContent = 'Instantiated successfully (unexpected!)';
+            } catch (e) {
+                result2a.className = 'result-display error';
+                result2a.textContent = e.message;
+            }
+        }
+    });
+
+    // ── Sandbox 2b: Memory demo ───────────────────────────────
+
+    const controls2b = document.getElementById('controls2b');
+    const memoryDisplay = document.getElementById('memory-display');
+    let storeValue = 42;
+    let memExports = null;
+
+    createSlider(controls2b, {
+        label: 'Value to store', id: 'store-val',
+        min: 0, max: 255, step: 1, value: 42,
+        onChange: v => { storeValue = v; }
+    });
+
+    createButton(controls2b, {
+        label: 'Store to WASM memory',
+        onClick: async () => {
+            try {
+                if (!memExports) {
+                    memExports = await instantiateWasm(memModule);
+                }
+                memExports.store(storeValue);
+                const bytes = new Uint8Array(memExports.memory.buffer, 0, 4);
+                const byteEls = memoryDisplay.children;
+                for (let i = 0; i < 4; i++) {
+                    byteEls[i].textContent = bytes[i].toString(16).padStart(2, '0');
+                    byteEls[i].className = 'memory-byte' + (bytes[i] !== 0 ? ' written' : '');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    });
+
+    // ── Sandbox 3: Benchmark ──────────────────────────────────
+
+    const controls3 = document.getElementById('controls3');
+    let fibN = 30;
+
+    function jsFib(n) {
+        if (n < 2) return n;
+        return jsFib(n - 1) + jsFib(n - 2);
+    }
+
+    createSlider(controls3, {
+        label: 'N (fibonacci)', id: 'fib-n',
+        min: 20, max: 38, step: 1, value: 30,
+        onChange: v => { fibN = v; }
+    });
+
+    let benchmarkRunning = false;
+
+    createButton(controls3, {
+        label: 'Run Benchmark',
+        onClick: async () => {
+            if (benchmarkRunning) return;
+            benchmarkRunning = true;
+
+            const readout3 = document.getElementById('readout3');
+            readout3.textContent = 'Running benchmark...';
+
+            // Small delay to let DOM update
+            await new Promise(r => setTimeout(r, 50));
+
+            try {
+                const exports = await instantiateWasm(fibModule);
+                const wasmFib = exports.fib;
+                const n = fibN;
+                const iterations = 20;
+
+                const result = benchmark(
+                    () => jsFib(n),
+                    () => wasmFib(n),
+                    iterations
+                );
+
+                const jsTimes = result.times1.sort((a, b) => a - b);
+                const wasmTimes = result.times2.sort((a, b) => a - b);
+                const jsMedian = jsTimes[Math.floor(jsTimes.length / 2)];
+                const wasmMedian = wasmTimes[Math.floor(wasmTimes.length / 2)];
+
+                // Verify correctness
+                const jsResult = jsFib(n);
+                const wasmResult = wasmFib(n);
+
+                Plotly.newPlot('chart3', [
+                    {
+                        x: ['JavaScript', 'WASM'],
+                        y: [jsMedian, wasmMedian],
+                        type: 'bar',
+                        marker: {
+                            color: ['#f7df1e', '#654ff0'],
+                        },
+                        text: [jsMedian.toFixed(2) + ' ms', wasmMedian.toFixed(2) + ' ms'],
+                        textposition: 'outside',
+                    }
+                ], plotlyDefaults({
+                    title: { text: `Recursive Fibonacci(${n}) — median of ${iterations} runs` },
+                    yaxis: { title: 'Time (ms)', gridcolor: '#f0f0f0' },
+                    xaxis: { gridcolor: '#f0f0f0' },
+                    showlegend: false,
+                    margin: { t: 50, r: 20, b: 40, l: 60 },
+                }), { responsive: true });
+
+                const ratio = jsMedian / wasmMedian;
+                const faster = ratio > 1 ? 'WASM' : 'JS';
+                const factor = ratio > 1 ? ratio.toFixed(1) : (1/ratio).toFixed(1);
+
+                readout3.innerHTML = `<strong>fib(${n})</strong>: JS = ${jsMedian.toFixed(2)} ms, WASM = ${wasmMedian.toFixed(2)} ms. ` +
+                    `<strong>${faster} is ~${factor}x faster</strong> here. ` +
+                    `(Both return ${jsResult}, confirming correctness.)` +
+                    `<br><br>` +
+                    `WASM isn't universally faster than JS. Modern JS engines are <em>very good</em> at ` +
+                    `optimizing hot paths. WASM wins on: (1) predictable performance (no JIT warmup/deopt), ` +
+                    `(2) heavy numerical computation, (3) porting existing native code. ` +
+                    `WASM loses on: strings, DOM interaction, anything requiring many host calls.`;
+            } catch (e) {
+                readout3.textContent = 'Benchmark error: ' + e.message;
+                console.error(e);
+            }
+
+            benchmarkRunning = false;
+        }
+    });
+
+    // Initialize chart3 with placeholder
+    Plotly.newPlot('chart3', [], plotlyDefaults({
+        title: { text: 'Run the benchmark to see results' },
+        yaxis: { title: 'Time (ms)' },
+        showlegend: false,
+        margin: { t: 50, r: 20, b: 40, l: 60 },
+        annotations: [{
+            text: 'Click "Run Benchmark"',
+            showarrow: false,
+            font: { size: 14, color: '#999' },
+            xref: 'paper', yref: 'paper',
+            x: 0.5, y: 0.5,
+        }]
+    }), { responsive: true });
+
+    // ── Sandbox 4: Language Tax ────────────────────────────────
+
+    const languages = [
+        { name: 'Hand-written WAT', size: 41, color: '#654ff0',
+          detail: 'Nothing but the function, type signature, and export. Zero overhead.' },
+        { name: 'Zig (no runtime)', size: 200, color: '#f7a41d',
+          detail: 'Minimal function prologue/epilogue. No allocator, no runtime. Zig compiles to near-bare-metal WASM.' },
+        { name: 'Rust (no_std)', size: 200, color: '#ce422b',
+          detail: 'Similar to Zig — with #[no_mangle] and no_std, Rust emits almost nothing beyond your code. No allocator, no panic handler (if you use panic=abort).' },
+        { name: 'TinyGo', size: 5000, color: '#5dc9e2',
+          detail: 'Includes a small GC (~2KB), memory allocator, and minimal runtime. Much smaller than full Go because TinyGo reimplements the runtime from scratch.' },
+        { name: 'Rust (with std)', size: 2000000, color: '#ce422b',
+          detail: 'The Rust standard library pulls in an allocator (dlmalloc for WASM), panic/unwind infrastructure, and formatting machinery. Most of it is dead code for a trivial function, but LTO can only trim so much.' },
+        { name: 'Go', size: 2500000, color: '#00add8',
+          detail: 'Full Go runtime: goroutine scheduler, garbage collector, reflection support, syscall/js bridge layer. The runtime is the binary. Your add function is a rounding error.' },
+    ];
+
+    const sizeBars = document.getElementById('size-bars');
+    const maxSize = Math.max(...languages.map(l => l.size));
+
+    function renderBars(useLog) {
+        sizeBars.innerHTML = '';
+        languages.forEach((lang, i) => {
+            const row = document.createElement('div');
+            row.className = 'size-bar-row';
+
+            const label = document.createElement('div');
+            label.className = 'size-bar-label';
+            label.innerHTML = lang.name + ' <span class="expand-hint">&#9662;</span>';
+
+            const track = document.createElement('div');
+            track.className = 'size-bar-track';
+
+            const fill = document.createElement('div');
+            fill.className = 'size-bar-fill';
+            fill.style.background = lang.color;
+
+            let pct;
+            if (useLog) {
+                const logMax = Math.log10(maxSize);
+                const logVal = Math.log10(lang.size);
+                pct = (logVal / logMax) * 100;
+            } else {
+                pct = (lang.size / maxSize) * 100;
+            }
+            fill.style.width = pct + '%';
+
+            track.appendChild(fill);
+
+            const value = document.createElement('div');
+            value.className = 'size-bar-value';
+            if (lang.size >= 1000000) {
+                value.textContent = (lang.size / 1000000).toFixed(1) + ' MB';
+            } else if (lang.size >= 1000) {
+                value.textContent = (lang.size / 1000).toFixed(0) + ' KB';
+            } else {
+                value.textContent = lang.size + ' B';
+            }
+
+            row.appendChild(label);
+            row.appendChild(track);
+            row.appendChild(value);
+
+            // Expandable detail
+            const detail = document.createElement('div');
+            detail.className = 'lang-detail';
+            const detailInner = document.createElement('div');
+            detailInner.className = 'lang-detail-inner';
+            detailInner.textContent = lang.detail;
+            detail.appendChild(detailInner);
+
+            row.addEventListener('click', () => {
+                detail.classList.toggle('open');
+            });
+
+            sizeBars.appendChild(row);
+            sizeBars.appendChild(detail);
+        });
+    }
+
+    renderBars(true); // default to log scale
+
+    // Scale toggle
+    const scaleToggle = document.getElementById('scale-toggle');
+    scaleToggle.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') return;
+        scaleToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        renderBars(e.target.dataset.scale === 'log');
+    });
+
+    // Tabbed code comparison
+    const languageTabs = document.getElementById('language-tabs');
+    createTabbedCode(languageTabs, [
+        { lang: 'wat', label: 'WAT', code: `(module
+  (func $add (export "add")
+    (param i32 i32) (result i32)
+    local.get 0
+    local.get 1
+    i32.add))` },
+        { lang: 'go', label: 'Go', code: `//go:build wasm
+
+package main
+
+import "syscall/js"
+
+func add(this js.Value, args []js.Value) interface{} {
+    return args[0].Int() + args[1].Int()
+}
+
+func main() {
+    js.Global().Set("add", js.FuncOf(add))
+    select {} // block forever
+}` },
+        { lang: 'tinygo', label: 'TinyGo', code: `//go:build wasm
+
+package main
+
+//export add
+func add(a, b int32) int32 {
+    return a + b
+}` },
+        { lang: 'rust', label: 'Rust', code: `#[no_mangle]
+pub extern "C" fn add(a: i32, b: i32) -> i32 {
+    a + b
+}` },
+        { lang: 'odin', label: 'Odin', code: `package main
+
+// Note: Odin's WASM target is experimental
+@(export)
+add :: proc "c" (a, b: i32) -> i32 {
+    return a + b
+}` },
+        { lang: 'jai', label: 'Jai', code: `// Jai's WASM target is not yet publicly available
+add :: (a: s32, b: s32) -> s32 {
+    return a + b;
+}` },
+    ]);
+});
+</script>
+
+</body>
+</html>
