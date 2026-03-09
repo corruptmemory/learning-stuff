@@ -490,3 +490,267 @@ code {
     font-size: 1.2rem;
     margin-bottom: 0.25rem;
 }
+
+/* ── Binary Viewer ─────────────────────────────────────────── */
+
+.binary-viewer {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.8;
+    padding: 1rem;
+    background: #1a1a2e;
+    color: #a0a0c0;
+    border-radius: 6px;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.binary-viewer .byte {
+    display: inline-block;
+    padding: 0.1em 0.3em;
+    margin: 0.1em;
+    border-radius: 3px;
+    cursor: default;
+    transition: background 0.15s;
+}
+
+.binary-viewer .byte:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.binary-viewer .byte.magic { color: #f59e0b; background: rgba(245, 158, 11, 0.15); }
+.binary-viewer .byte.version { color: #3b82f6; background: rgba(59, 130, 246, 0.15); }
+.binary-viewer .byte.section-type { color: #ef4444; background: rgba(239, 68, 68, 0.15); }
+.binary-viewer .byte.section-data { color: #a78bfa; background: rgba(167, 139, 250, 0.1); }
+.binary-viewer .byte.active { background: rgba(255, 255, 255, 0.2); outline: 1px solid rgba(255,255,255,0.4); }
+
+.binary-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+}
+
+.binary-legend .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 0.3em;
+    vertical-align: middle;
+}
+
+/* ── Size Comparison Bar Chart ─────────────────────────────── */
+
+.size-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.size-bar-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 80px;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.size-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+.size-bar-track {
+    height: 24px;
+    background: var(--color-bg);
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+}
+
+.size-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.size-bar-value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+/* ── Imports/Exports Diagram ───────────────────────────────── */
+
+.boundary-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    align-items: center;
+    padding: 1rem;
+    background: var(--color-bg);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+}
+
+.boundary-side {
+    padding: 1rem;
+    border-radius: 6px;
+    min-height: 120px;
+}
+
+.boundary-side.host {
+    background: #dbeafe;
+    border: 2px solid #3b82f6;
+}
+
+.boundary-side.wasm {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+}
+
+.boundary-wall {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.boundary-arrow {
+    font-size: 1.2rem;
+    color: var(--color-accent);
+}
+
+/* ── Expandable Rosetta (multi-language) ───────────────────── */
+
+.rosetta-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 0;
+}
+
+.rosetta-tab {
+    padding: 0.4rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    transition: all 0.15s;
+}
+
+.rosetta-tab:hover {
+    background: var(--color-bg);
+}
+
+.rosetta-tab.active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+    margin-bottom: -2px;
+    border-bottom: 2px solid var(--color-surface);
+}
+
+.rosetta-tab-content {
+    display: none;
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+}
+
+.rosetta-tab-content.active {
+    display: block;
+}
+
+.rosetta-tab-content pre {
+    margin: 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    background: #fafafa;
+}
+
+.rosetta-tab-content pre code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+/* ── Language color accents ────────────────────────────────── */
+
+.rosetta-tab[data-lang="go"] { border-top-color: #00ADD8; }
+.rosetta-tab[data-lang="go"].active { color: #00ADD8; }
+.rosetta-tab[data-lang="tinygo"] { border-top-color: #5DC9E2; }
+.rosetta-tab[data-lang="tinygo"].active { color: #5DC9E2; }
+.rosetta-tab[data-lang="rust"] { border-top-color: #CE422B; }
+.rosetta-tab[data-lang="rust"].active { color: #CE422B; }
+.rosetta-tab[data-lang="odin"] { border-top-color: #3882D6; }
+.rosetta-tab[data-lang="odin"].active { color: #3882D6; }
+.rosetta-tab[data-lang="jai"] { border-top-color: #9B59B6; }
+.rosetta-tab[data-lang="jai"].active { color: #9B59B6; }
+.rosetta-tab[data-lang="wat"] { border-top-color: #654FF0; }
+.rosetta-tab[data-lang="wat"].active { color: #654FF0; }
+.rosetta-tab[data-lang="js"] { border-top-color: #F7DF1E; }
+.rosetta-tab[data-lang="js"].active { color: #b8a600; }
+
+/* ── Decision Tree ─────────────────────────────────────────── */
+
+.decision-tree {
+    padding: 1rem;
+}
+
+.decision-node {
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 6px;
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.decision-node:hover {
+    border-color: var(--color-accent);
+    background: var(--color-accent-light);
+}
+
+.decision-node.question {
+    background: var(--color-surface);
+    font-weight: 600;
+}
+
+.decision-node.answer-yes {
+    background: #f0fdf4;
+    border-color: var(--color-success);
+    margin-left: 1.5rem;
+}
+
+.decision-node.answer-no {
+    background: #fef2f2;
+    border-color: var(--color-treatment);
+    margin-left: 1.5rem;
+}
+
+.decision-node.verdict {
+    background: var(--color-accent-light);
+    border-color: var(--color-accent);
+    font-weight: 600;
+    margin-left: 3rem;
+}
