@@ -5,6 +5,8 @@ Interactive learning environment for data science, finance, and machine learning
 ## Tracks
 
 - **data-science/** — statistics, probability, causal inference
+- **web-dev/** — WebAssembly, React
+- **graphics/** — Vulkan, GPU programming (planned)
 - **finance/** — market analysis, derivatives, greeks (planned)
 - **ml/** — modern machine learning (planned)
 
@@ -19,6 +21,7 @@ Interactive learning environment for data science, finance, and machine learning
 
 # Open an exploration
 # http://localhost:8080/data-science/difference-in-differences/explore.html
+# http://localhost:8080/web-dev/wasm/explore.html
 ```
 
 ## Structure
@@ -49,5 +52,5 @@ Each topic gets its own `.venv/` — no global Python environment, no dependency
 - **Exploration-first**: interact with sliders and charts, not lectures
 - **Git-versioned**: your learning journey is tracked and portable across machines
 - **Vendored and offline**: no CDN dependencies, works on a plane
-- **Rosetta Stone**: concepts shown in both R and Python side by side
+- **Rosetta Stone**: concepts shown in both R and Python side by side (data science), or multi-language tabs (systems programming)
 - **Python as plumbing**: HTML is the primary interface, Python handles heavy computation

@@ -1,11 +1,12 @@
 # Project: learning-stuff
 
-Interactive learning environment for data science, finance, and ML.
+Interactive learning environment for data science, finance, ML, web technologies, and graphics programming.
 
 ## Architecture
 
-- Each topic is a self-contained directory under its track (`data-science/`, `finance/`, `ml/`)
+- Each topic is a self-contained directory under its track (`data-science/`, `finance/`, `ml/`, `web-dev/`, `graphics/`)
 - The primary interface is `explore.html` — standalone HTML with interactive charts (Plotly), rendered math (KaTeX), and controls
+- Some topics span multiple pages (e.g., `web-dev/wasm/` has `explore.html`, `escape-the-web.html`, `cloudflare-workers.html`)
 - Python scripts sit alongside for heavier computation, managed by per-topic venvs
 - Shared CSS/JS infrastructure lives in `shared/`
 
@@ -17,6 +18,7 @@ Interactive learning environment for data science, finance, and ML.
 - **Use `./build.sh`** for all Python venv operations — never create venvs manually
 - **Explorations are exploration-first**: interactive sandboxes with sliders and charts, not lectures. Short conceptual intros, then hands-on.
 - **Rosetta Stone pattern**: when showing code, show both R and Python side by side with annotations mapping to the concepts explored in the sandboxes
+- **Tabbed Rosetta Stone**: for multi-language comparisons (WASM track), use `createTabbedCode()` with language tabs (Go, TinyGo, Rust, Odin, Jai, WAT, JS)
 
 ## Adding a New Topic
 
@@ -34,6 +36,10 @@ Interactive learning environment for data science, finance, and ML.
 - `plotlyDefaults(overrides)` — consistent Plotly chart theming
 - `seededRandom(seed)` — reproducible pseudo-random number generator
 - `normalRandom(rng, mean, std)` — Box-Muller normal distribution
+- `createTabbedCode(container, tabs)` — multi-language tabbed code panels
+- `instantiateWasm(bytes, imports)` — WebAssembly.instantiate wrapper
+- `createBinaryViewer(container, bytes, regions)` — color-coded hex dump of WASM binaries
+- `benchmark(fn1, fn2, iterations)` — timing comparison for two functions
 
 ## Technical Notes
 
@@ -44,21 +50,35 @@ Interactive learning environment for data science, finance, and ML.
 
 ## Current State and Next Steps
 
-**Completed:** DiD exploration with 5 sandboxes:
+**Completed:**
+
+DiD exploration (data-science/difference-in-differences/) with 5 sandboxes:
 1. Two Groups, One Shock (with four-dot centroid visualization)
 2. Why Not Just Before/After? (three competing estimators)
 3. Parallel Trends + Anticipation (two assumption violations)
 4. Olympic Connection (multi-country staggered treatment)
 5. Rosetta Stone (R + Python side by side)
 
-**Natural next explorations (in rough order of priority):**
+WASM exploration (web-dev/wasm/) with 3 pages:
+1. Runtime Model (explore.html) — binary viewer, boundary demo, JS vs WASM benchmark, language tax
+2. Can I Just WASM a Frontend? (escape-the-web.html) — browser API checklist, spectrum of approaches, canvas escape hatch, decision tree
+3. Cloudflare Workers (cloudflare-workers.html) — containers vs isolates, edge latency, use cases, Worker anatomy
+
+**Data science next explorations:**
 - **Permutation testing** — distribution-free hypothesis testing, connects to "is this DiD result noise?"
 - **Fixed effects** — what "controlling for" means mechanically
 - **Decomposition** — separating delegation size from judging bias (Cremieux's key insight)
 - **Event studies** — per-period treatment effects, the standard parallel trends diagnostic
+
+**Planned tracks (see docs/plans/2026-03-09-new-tracks-design.md):**
+- **web-dev/react/** — ground-zero "why does this exist" exploration
+- **graphics/vulkan/** — shader mental model, pipeline architecture, Odin exercises
+- **graphics/gpu-programming/** — CUDA, compute shaders (future)
 
 **Anchoring article:** Cremieux, "Why Do Olympic Hosts Win More Medals?" (https://www.cremieux.xyz/p/why-do-olympic-hosts-win-more-medals) — code not publicly available, author uses R/fixest.
 
 ## User Context
 
 The learner has a physics degree, is intermediate in data science/finance/ML, comfortable with graduate-level math. Prefers exploration over lectures. Has working Python skills but prefers to minimize friction. Developing fluency in both Python and R for statistical work. Maps physics intuitions to stats concepts (systematic error → bias, statistical error → variance, chi-squared → p-values). Reads Cremieux (Substack), familiar with Judea Pearl's "Book of Why," aware of Taleb's critiques of CLT overuse in fat-tailed domains.
+
+Systems programming polyglot: Go (primary), Odin, Jai, reluctantly Rust. Has done Vulkan tutorial through Multisampling in Odin. Has done WASM experiments with Go/TinyGo. React: ground-zero. Prefers "sane" languages and tooling over the JavaScript ecosystem.
