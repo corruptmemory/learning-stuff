@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Can I Just WASM a Frontend?</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="../../shared/vendor/katex/katex.min.css">
+    <script src="../../shared/vendor/katex/katex.min.js"></script>
+    <script src="../../shared/vendor/katex/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="../../shared/vendor/plotly.min.js"></script>
+
+    <!-- Shared styles and utilities -->
+    <link rel="stylesheet" href="../../shared/explore.css">
+    <script src="../../shared/explore.js"></script>
+
+    <style>
+        /* ── Page-specific styles ──────────────────────────────── */
+
+        .api-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .api-row {
+            display: grid;
+            grid-template-columns: 2fr 120px;
+            gap: 0;
+            border: 1px solid var(--color-border);
+            border-bottom: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .api-row:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .api-row:last-of-type {
+            border-bottom: 1px solid var(--color-border);
+            border-radius: 0 0 6px 6px;
+        }
+
+        .api-row:hover {
+            background: var(--color-accent-light);
+        }
+
+        .api-row .api-name {
+            padding: 0.6rem 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .api-row .api-name .expand-arrow {
+            font-size: 0.7rem;
+            color: var(--color-text-muted);
+            transition: transform 0.2s;
+        }
+
+        .api-row.open .api-name .expand-arrow {
+            transform: rotate(90deg);
+        }
+
+        .api-row .api-status {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid var(--color-border);
+        }
+
+        .api-status.no {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .api-status.partial {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .api-status.na {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .api-detail {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+            border-left: 1px solid var(--color-border);
+            border-right: 1px solid var(--color-border);
+        }
+
+        .api-detail.open {
+            max-height: 200px;
+        }
+
+        .api-detail-inner {
+            padding: 0.6rem 1rem 0.8rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            line-height: 1.5;
+            background: var(--color-bg);
+            border-top: 1px dashed var(--color-border);
+        }
+
+        /* ── Spectrum Cards ──────────────────────────────────── */
+
+        .spectrum {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .spectrum {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .spectrum-card {
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .spectrum-card.thin-glue {
+            border-color: #3b82f6;
+            border-top-width: 4px;
+        }
+
+        .spectrum-card.canvas-only {
+            border-color: #d97706;
+            border-top-width: 4px;
+        }
+
+        .spectrum-card.vdom-framework {
+            border-color: #ea580c;
+            border-top-width: 4px;
+        }
+
+        .spectrum-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .spectrum-card .card-desc {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+
+        .spectrum-card .card-tradeoffs {
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .spectrum-card .card-tradeoffs dt {
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-text-muted);
+            margin-top: 0.4rem;
+        }
+
+        .spectrum-card .card-tradeoffs dd {
+            margin-left: 0;
+            color: var(--color-text);
+        }
+
+        .spectrum-card .card-size {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+            background: var(--color-bg);
+            border-radius: 4px;
+            text-align: center;
+            color: var(--color-text-muted);
+        }
+
+        .spectrum-label {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        .spectrum-card.thin-glue .spectrum-label {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .spectrum-card.canvas-only .spectrum-label {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .spectrum-card.vdom-framework .spectrum-label {
+            background: #ffedd5;
+            color: #ea580c;
+        }
+
+        /* ── Canvas Demo ─────────────────────────────────────── */
+
+        .canvas-demo-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .canvas-wrapper {
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        .canvas-wrapper canvas {
+            display: block;
+            width: 100%;
+            cursor: crosshair;
+        }
+
+        .canvas-status {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+            padding: 0.4rem 0.75rem;
+            background: var(--color-bg);
+            border-radius: 4px;
+            border: 1px solid var(--color-border);
+        }
+
+        .shim-code {
+            background: #1a1a2e;
+            color: #a0a0c0;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .shim-code code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .shim-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Decision Tree ───────────────────────────────────── */
+
+        .dt-question {
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+            background: var(--color-surface);
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .dt-question .q-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-accent);
+            margin-right: 0.4rem;
+        }
+
+        .dt-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .dt-option {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+            background: var(--color-surface);
+        }
+
+        .dt-option:hover {
+            border-color: var(--color-accent);
+            background: var(--color-accent-light);
+        }
+
+        .dt-option.selected {
+            border-color: var(--color-accent);
+            background: var(--color-accent-light);
+        }
+
+        .dt-step {
+            display: none;
+        }
+
+        .dt-step.visible {
+            display: block;
+        }
+
+        .dt-verdict {
+            display: none;
+            margin-left: 1.5rem;
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            border-left: 4px solid;
+        }
+
+        .dt-verdict.visible {
+            display: block;
+        }
+
+        .dt-verdict.v1 {
+            background: #f0fdf4;
+            border-color: #16a34a;
+        }
+
+        .dt-verdict.v2 {
+            background: #eff6ff;
+            border-color: #2563eb;
+        }
+
+        .dt-verdict.v3 {
+            background: #fefce8;
+            border-color: #ca8a04;
+        }
+
+        .dt-verdict.v4 {
+            background: #fdf4ff;
+            border-color: #a855f7;
+        }
+
+        .dt-verdict.v5 {
+            background: #f0f9ff;
+            border-color: #0ea5e9;
+        }
+
+        .dt-verdict strong {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.95rem;
+        }
+
+        .dt-reset {
+            margin-top: 1rem;
+            margin-left: 1.5rem;
+        }
+
+        .dt-reset button {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-surface);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .dt-reset button:hover {
+            background: var(--color-accent-light);
+            border-color: var(--color-accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="exploration">
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <header>
+        <h1>Can I Just WASM a Frontend?</h1>
+        <div class="subtitle">
+            The honest answer to "do I need JavaScript?"
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="intro">
+        <p>
+            You know a systems language. You hate JavaScript. WebAssembly exists.
+            The question is obvious: can you skip the entire web frontend stack and
+            just... write your UI in a real language? The answer is nuanced, and depends
+            on what you mean by "frontend."
+        </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 1: What You Need From the Browser -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox1">
+        <h2>Sandbox 1: What You Need From the Browser</h2>
+        <div class="description">
+            <p>
+                Before you can replace JavaScript, you need to know what it actually <em>does</em>.
+                Here's what the browser provides — and whether WASM can touch it directly.
+                Click any row to see why.
+            </p>
+        </div>
+
+        <div class="sandbox-content" style="display: block;">
+            <div class="api-grid" id="api-grid"></div>
+        </div>
+
+        <div class="readout">
+            The DOM is the browser's API. WASM can't bypass it. If you want text, forms, and layout —
+            you're either writing JS glue or using a framework that writes it for you.
+            If you want pixels on a canvas — you can mostly stay in WASM land.
+        </div>
+    </section>
+
+    <div class="connection">
+        So WASM can't touch the browser directly. But there are different strategies for bridging the gap...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 2: The Spectrum -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox2">
+        <h2>Sandbox 2: The Spectrum</h2>
+        <div class="description">
+            <p>
+                Three strategies for building a web frontend with WASM, from
+                "mostly JS" to "almost no JS." Each trades different things.
+            </p>
+        </div>
+
+        <div class="sandbox-content" style="display: block;">
+            <div class="spectrum">
+                <!-- Card 1: Thin Glue -->
+                <div class="spectrum-card thin-glue">
+                    <div class="spectrum-label">Mostly JS</div>
+                    <h3>Thin Glue</h3>
+                    <div class="card-desc">
+                        Business logic in WASM, UI in HTML/JS. JavaScript handles all DOM,
+                        events, and rendering. WASM does the heavy lifting: validation,
+                        crypto, data processing, simulation.
+                    </div>
+                    <dl class="card-tradeoffs">
+                        <dt>You gain</dt>
+                        <dd>Full browser API access, small WASM binary, easy debugging, progressive enhancement</dd>
+                        <dt>You give up</dt>
+                        <dd>Nothing — but you still write JS for the UI</dd>
+                    </dl>
+                    <div class="card-size">WASM: ~1-50 KB</div>
+                </div>
+
+                <!-- Card 2: Canvas Only -->
+                <div class="spectrum-card canvas-only">
+                    <div class="spectrum-label">Hybrid</div>
+                    <h3>Canvas Only</h3>
+                    <div class="card-desc">
+                        No DOM elements except the <code>&lt;canvas&gt;</code> itself. WASM handles all
+                        rendering via WebGL/Canvas2D. JS is just a thin event-forwarding shim (~20 lines).
+                        Games, data viz, creative tools.
+                    </div>
+                    <dl class="card-tradeoffs">
+                        <dt>You gain</dt>
+                        <dd>Almost no JS to write, full control over rendering, port native engines directly</dd>
+                        <dt>You give up</dt>
+                        <dd>Text selection, accessibility, browser dev tools for layout, scrolling, form controls</dd>
+                    </dl>
+                    <div class="card-size">WASM: 50 KB - 5 MB</div>
+                </div>
+
+                <!-- Card 3: Virtual DOM Framework -->
+                <div class="spectrum-card vdom-framework">
+                    <div class="spectrum-label">Mostly WASM</div>
+                    <h3>Virtual DOM Framework</h3>
+                    <div class="card-desc">
+                        Rust: Yew, Leptos, Dioxus. Go: Vecty (abandoned), Vugu.
+                        The framework maintains a virtual DOM, diffs it, and calls JS to patch
+                        the real DOM. You write "HTML-like" code in your language.
+                    </div>
+                    <dl class="card-tradeoffs">
+                        <dt>You gain</dt>
+                        <dd>Write UI in your language, type safety, component model, familiar SPA patterns</dd>
+                        <dt>You give up</dt>
+                        <dd>Large binary (framework + runtime), slower DOM updates than native JS, smaller ecosystem</dd>
+                    </dl>
+                    <div class="card-size">WASM: 200 KB - 5 MB</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;" id="spectrum-tabs"></div>
+        </div>
+
+        <div class="readout">
+            There's no escape from the browser's API — only different ways to talk to it.
+            The question isn't "can I avoid JS entirely?" (you can't, except on canvas).
+            The question is "how much JS do I have to <em>write myself</em>?"
+        </div>
+    </section>
+
+    <div class="connection">
+        The canvas approach is the most "pure WASM" option. Let's see it in action...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 3: The Canvas Escape Hatch -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox3">
+        <h2>Sandbox 3: The Canvas Escape Hatch</h2>
+        <div class="description">
+            <p>
+                A live demo of the canvas-only approach. The "WASM module" owns all state and
+                logic — position, velocity, color computation, collision detection. JavaScript
+                does exactly two things: forward mouse events and call Canvas2D draw methods.
+                Move your mouse over the canvas.
+            </p>
+        </div>
+
+        <div class="sandbox-content" style="display: block;">
+            <div class="canvas-demo-area">
+                <div class="canvas-wrapper">
+                    <canvas id="demo-canvas" width="900" height="400"></canvas>
+                </div>
+                <div class="canvas-status" id="canvas-status">
+                    WASM state: x=450 y=200 r=30 | color: rgb(100, 100, 200) | mouse: (-, -)
+                </div>
+
+                <div>
+                    <div class="shim-label">The entire JS shim (~25 lines)</div>
+                    <div class="shim-code"><code>// This is all the JavaScript you need. It never changes.
+// Your application logic lives in the WASM module.
+
+const canvas = document.getElementById('demo-canvas');
+const ctx = canvas.getContext('2d');
+let mouseX = -1, mouseY = -1;
+
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+let lastTime = performance.now();
+
+function frame(now) {
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
+
+    wasm.update(mouseX, mouseY, dt);  // WASM owns state + logic
+
+    // JS does I/O: read state, draw pixels
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(wasm.getX(), wasm.getY(), wasm.getRadius(), 0, Math.PI * 2);
+    ctx.fillStyle = `rgb(${wasm.getR()},${wasm.getG()},${wasm.getB()})`;
+    ctx.fill();
+
+    requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);</code></div>
+                </div>
+
+                <div style="margin-top: 0.75rem;" id="wasm-side-tabs"></div>
+            </div>
+        </div>
+
+        <div class="readout">
+            The canvas escape hatch is real. If your UI is "pixels on screen" — games, visualizations,
+            creative tools — you can write almost everything in your preferred language. The JS shim
+            is boilerplate that never changes. But you lose everything the browser gives you for free:
+            text rendering, accessibility, scrolling, form controls, dev tools.
+        </div>
+    </section>
+
+    <div class="connection">
+        Now that you've seen the options, which one is right for your situation?
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 4: The Verdict: Decision Tree -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox4">
+        <h2>Sandbox 4: The Verdict</h2>
+        <div class="description">
+            <p>
+                An interactive decision tree. Click your answer to each question.
+            </p>
+        </div>
+
+        <div class="sandbox-content" style="display: block;">
+            <div id="decision-tree"></div>
+        </div>
+
+        <div class="readout">
+            The honest answer: WASM can replace JavaScript for canvas-based UIs today.
+            For DOM-based UIs, it adds complexity without removing JavaScript — it just hides
+            it behind a framework. The pragmatic middle ground is often: server-side language
+            you love + HTMX, with WASM modules for computationally heavy client-side work.
+        </div>
+    </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- All JavaScript -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllMath();
+
+    // ── Sandbox 1: Browser API Grid ─────────────────────────
+
+    const apiData = [
+        {
+            name: 'DOM manipulation',
+            status: 'no', statusLabel: 'No — JS required',
+            detail: 'WASM can\'t create elements, set attributes, or modify text. Every DOM operation requires calling an imported JS function. Frameworks like Yew/Leptos generate these calls for you, but the calls still happen.'
+        },
+        {
+            name: 'Event handling (click, keyboard)',
+            status: 'no', statusLabel: 'No — JS required',
+            detail: 'Events are a browser API. JS registers the listener, then forwards the event data to WASM via function call. There\'s no way for WASM to subscribe to events directly.'
+        },
+        {
+            name: 'Canvas 2D / WebGL / WebGPU',
+            status: 'partial', statusLabel: 'Partial',
+            detail: 'The rendering commands go through JS bindings, but the data (vertices, pixels) can live in WASM linear memory. This is the closest to "native" you get. Game engines (Bevy, macroquad) use this path.'
+        },
+        {
+            name: 'Fetch / networking',
+            status: 'no', statusLabel: 'No — JS required',
+            detail: 'Fetch is a browser API. WASM can prepare request data in memory, but JS must make the actual call and pass results back.'
+        },
+        {
+            name: 'LocalStorage / IndexedDB',
+            status: 'no', statusLabel: 'No — JS required',
+            detail: 'All browser storage APIs require JS. WASM can serialize data to linear memory, but JS must read it and call the storage API.'
+        },
+        {
+            name: 'Audio (Web Audio API)',
+            status: 'no', statusLabel: 'No — JS required',
+            detail: 'Audio processing can happen in WASM (fast DSP), but playback requires the Web Audio API, which is JS-only. AudioWorklets can load WASM, but setup is JS.'
+        },
+        {
+            name: 'WASI (filesystem, sockets)',
+            status: 'na', statusLabel: 'Not in browsers',
+            detail: 'WASI provides OS-like APIs (file I/O, sockets, clocks) but browsers don\'t implement it. Wasmtime and Wasmer do. Cloudflare Workers have partial support. This is a server-side story, not a browser story.'
+        },
+    ];
+
+    const apiGrid = document.getElementById('api-grid');
+
+    apiData.forEach((api, i) => {
+        const row = document.createElement('div');
+        row.className = 'api-row';
+
+        row.innerHTML = `
+            <div class="api-name">
+                <span class="expand-arrow">&#9654;</span>
+                ${api.name}
+            </div>
+            <div class="api-status ${api.status}">${api.statusLabel}</div>
+        `;
+
+        const detail = document.createElement('div');
+        detail.className = 'api-detail';
+        detail.innerHTML = `<div class="api-detail-inner">${api.detail}</div>`;
+
+        row.addEventListener('click', () => {
+            const wasOpen = row.classList.contains('open');
+            // Close all
+            apiGrid.querySelectorAll('.api-row').forEach(r => r.classList.remove('open'));
+            apiGrid.querySelectorAll('.api-detail').forEach(d => d.classList.remove('open'));
+            // Toggle this one
+            if (!wasOpen) {
+                row.classList.add('open');
+                detail.classList.add('open');
+            }
+        });
+
+        apiGrid.appendChild(row);
+        apiGrid.appendChild(detail);
+    });
+
+    // ── Sandbox 2: Spectrum Tabs ────────────────────────────
+
+    const spectrumTabs = document.getElementById('spectrum-tabs');
+    createTabbedCode(spectrumTabs, [
+        { lang: 'js', label: 'Thin Glue (JS)', code: `// JS side: render the form, call WASM for validation
+const form = document.getElementById('signup');
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = form.email.value;
+    const password = form.password.value;
+
+    // WASM does the heavy lifting
+    const result = wasm.validate(email, password);
+    if (result.valid) {
+        submitForm(email, password);
+    } else {
+        showError(result.reason);  // JS renders the error
+    }
+});` },
+        { lang: 'rust', label: 'Canvas (Rust)', code: `// Rust side (compiled to WASM): owns all state + rendering logic
+// JS just forwards events and calls draw()
+
+static mut STATE: AppState = AppState::new();
+
+#[no_mangle]
+pub extern "C" fn update(mouse_x: f32, mouse_y: f32, dt: f32) {
+    unsafe {
+        STATE.mouse = (mouse_x, mouse_y);
+        STATE.ball.velocity += gravity * dt;
+        STATE.ball.position += STATE.ball.velocity * dt;
+        STATE.ball.bounce_off_walls(CANVAS_W, CANVAS_H);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn get_x() -> f32 { unsafe { STATE.ball.position.x } }
+#[no_mangle]
+pub extern "C" fn get_y() -> f32 { unsafe { STATE.ball.position.y } }` },
+        { lang: 'rust', label: 'Leptos (Rust)', code: `// Leptos: write HTML-like syntax in Rust
+// The framework generates all the JS-to-DOM glue
+
+use leptos::*;
+
+#[component]
+fn App() -> impl IntoView {
+    let (count, set_count) = create_signal(0);
+
+    view! {
+        <div class="counter">
+            <h1>"Count: " {count}</h1>
+            <button on:click=move |_| {
+                set_count.update(|n| *n += 1)
+            }>
+                "Click me"
+            </button>
+        </div>
+    }
+}
+
+// This compiles to WASM + generates JS that:
+// 1. Creates the DOM elements
+// 2. Registers event listeners
+// 3. Updates text nodes when signals change
+// You never see the JS. But it's there.` },
+    ]);
+
+    // ── Sandbox 3: Canvas Demo ──────────────────────────────
+
+    // This simulates the WASM pattern: a "module" that owns state and
+    // exports update/getter functions. The logic is in JS here, but the
+    // architecture matches exactly what compiled WASM would look like.
+
+    const wasmModule = (() => {
+        // "Linear memory" — all state lives here
+        let x = 450, y = 200;
+        let vx = 120, vy = 80;
+        let radius = 30;
+        let r = 100, g = 100, b = 200;
+        const W = 900, H = 400;
+
+        return {
+            update(mouseX, mouseY, dt) {
+                // Physics: bouncing ball with mouse attraction
+                if (mouseX >= 0 && mouseY >= 0) {
+                    const dx = mouseX - x;
+                    const dy = mouseY - y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 1) {
+                        // Attract toward mouse
+                        const force = 400;
+                        vx += (dx / dist) * force * dt;
+                        vy += (dy / dist) * force * dt;
+                    }
+                }
+
+                // Gravity
+                vy += 200 * dt;
+
+                // Damping
+                vx *= 0.999;
+                vy *= 0.999;
+
+                // Integrate
+                x += vx * dt;
+                y += vy * dt;
+
+                // Bounce off walls
+                if (x - radius < 0) { x = radius; vx = Math.abs(vx) * 0.9; }
+                if (x + radius > W) { x = W - radius; vx = -Math.abs(vx) * 0.9; }
+                if (y - radius < 0) { y = radius; vy = Math.abs(vy) * 0.9; }
+                if (y + radius > H) { y = H - radius; vy = -Math.abs(vy) * 0.9; }
+
+                // Color based on position
+                r = Math.floor((x / W) * 255);
+                g = Math.floor((y / H) * 200) + 55;
+                b = Math.floor(255 - (x / W) * 155);
+
+                // Radius pulses with speed
+                const speed = Math.sqrt(vx * vx + vy * vy);
+                radius = 25 + Math.min(speed / 30, 20);
+            },
+            getX() { return x; },
+            getY() { return y; },
+            getRadius() { return radius; },
+            getR() { return r; },
+            getG() { return g; },
+            getB() { return b; },
+        };
+    })();
+
+    // The JS shim — this is the part that would be identical
+    // whether the module is real WASM or simulated
+    const canvas = document.getElementById('demo-canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('canvas-status');
+    let mouseX = -1, mouseY = -1;
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        mouseX = -1;
+        mouseY = -1;
+    });
+
+    let lastTime = performance.now();
+
+    function frame(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.05); // cap dt
+        lastTime = now;
+
+        wasmModule.update(mouseX, mouseY, dt);
+
+        const cx = wasmModule.getX();
+        const cy = wasmModule.getY();
+        const cr = wasmModule.getRadius();
+        const cR = wasmModule.getR();
+        const cG = wasmModule.getG();
+        const cB = wasmModule.getB();
+
+        // Draw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Subtle grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for (let gx = 0; gx < canvas.width; gx += 50) {
+            ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+        }
+        for (let gy = 0; gy < canvas.height; gy += 50) {
+            ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+        }
+
+        // Trail glow
+        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr * 3);
+        gradient.addColorStop(0, `rgba(${cR},${cG},${cB},0.15)`);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(cx - cr * 3, cy - cr * 3, cr * 6, cr * 6);
+
+        // Ball
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+        ctx.fillStyle = `rgb(${cR},${cG},${cB})`;
+        ctx.fill();
+
+        // Highlight
+        ctx.beginPath();
+        ctx.arc(cx - cr * 0.3, cy - cr * 0.3, cr * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,0.2)`;
+        ctx.fill();
+
+        // Status
+        const mx = mouseX >= 0 ? Math.round(mouseX) : '-';
+        const my = mouseY >= 0 ? Math.round(mouseY) : '-';
+        statusEl.textContent = `WASM state: x=${Math.round(cx)} y=${Math.round(cy)} r=${Math.round(cr)} | color: rgb(${cR}, ${cG}, ${cB}) | mouse: (${mx}, ${my})`;
+
+        requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+
+    // WASM-side code tabs
+    const wasmSideTabs = document.getElementById('wasm-side-tabs');
+    createTabbedCode(wasmSideTabs, [
+        { lang: 'go', label: 'Go (TinyGo)', code: `package main
+
+// State in "linear memory" — owned by WASM
+var x, y float32 = 450, 200
+var vx, vy float32 = 120, 80
+var radius float32 = 30
+var r, g, b uint8 = 100, 100, 200
+
+const W, H = 900, 400
+
+//export update
+func update(mouseX, mouseY, dt float32) {
+    if mouseX >= 0 && mouseY >= 0 {
+        dx, dy := mouseX-x, mouseY-y
+        dist := sqrt(dx*dx + dy*dy)
+        if dist > 1 {
+            vx += (dx / dist) * 400 * dt
+            vy += (dy / dist) * 400 * dt
+        }
+    }
+    vy += 200 * dt
+    x += vx * dt
+    y += vy * dt
+    // ... bounce, compute color, pulse radius
+}
+
+//export getX
+func getX() float32 { return x }
+//export getY
+func getY() float32 { return y }
+//export getRadius
+func getRadius() float32 { return radius }
+//export getR
+func getR() uint8 { return r }
+//export getG
+func getG() uint8 { return g }
+//export getB
+func getB() uint8 { return b }` },
+        { lang: 'rust', label: 'Rust', code: `static mut X: f32 = 450.0;
+static mut Y: f32 = 200.0;
+static mut VX: f32 = 120.0;
+static mut VY: f32 = 80.0;
+static mut RADIUS: f32 = 30.0;
+static mut R: u8 = 100;
+static mut G: u8 = 100;
+static mut B: u8 = 200;
+
+const W: f32 = 900.0;
+const H: f32 = 400.0;
+
+#[no_mangle]
+pub extern "C" fn update(mouse_x: f32, mouse_y: f32, dt: f32) {
+    unsafe {
+        if mouse_x >= 0.0 && mouse_y >= 0.0 {
+            let dx = mouse_x - X;
+            let dy = mouse_y - Y;
+            let dist = (dx * dx + dy * dy).sqrt();
+            if dist > 1.0 {
+                VX += (dx / dist) * 400.0 * dt;
+                VY += (dy / dist) * 400.0 * dt;
+            }
+        }
+        VY += 200.0 * dt;
+        X += VX * dt;
+        Y += VY * dt;
+        // ... bounce, compute color, pulse radius
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn get_x() -> f32 { unsafe { X } }
+#[no_mangle]
+pub extern "C" fn get_y() -> f32 { unsafe { Y } }
+#[no_mangle]
+pub extern "C" fn get_radius() -> f32 { unsafe { RADIUS } }
+#[no_mangle]
+pub extern "C" fn get_r() -> u8 { unsafe { R } }
+#[no_mangle]
+pub extern "C" fn get_g() -> u8 { unsafe { G } }
+#[no_mangle]
+pub extern "C" fn get_b() -> u8 { unsafe { B } }` },
+        { lang: 'odin', label: 'Odin', code: `package main
+
+// Odin's WASM target is experimental but functional
+
+x, y: f32 = 450, 200
+vx, vy: f32 = 120, 80
+radius: f32 = 30
+r, g, b: u8 = 100, 100, 200
+
+W :: 900
+H :: 400
+
+@(export)
+update :: proc "c" (mouse_x, mouse_y, dt: f32) {
+    if mouse_x >= 0 && mouse_y >= 0 {
+        dx := mouse_x - x
+        dy := mouse_y - y
+        import "core:math"
+        dist := math.sqrt(dx * dx + dy * dy)
+        if dist > 1 {
+            vx += (dx / dist) * 400 * dt
+            vy += (dy / dist) * 400 * dt
+        }
+    }
+    vy += 200 * dt
+    x += vx * dt
+    y += vy * dt
+    // ... bounce, compute color, pulse radius
+}
+
+@(export)
+get_x :: proc "c" () -> f32 { return x }
+@(export)
+get_y :: proc "c" () -> f32 { return y }
+@(export)
+get_radius :: proc "c" () -> f32 { return radius }
+@(export)
+get_r :: proc "c" () -> u8 { return r }
+@(export)
+get_g :: proc "c" () -> u8 { return g }
+@(export)
+get_b :: proc "c" () -> u8 { return b }` },
+    ]);
+
+    // ── Sandbox 4: Decision Tree ────────────────────────────
+
+    const treeContainer = document.getElementById('decision-tree');
+
+    const tree = {
+        q1: {
+            question: 'What kind of UI are you building?',
+            options: [
+                { label: 'Text, forms, layouts', next: 'q2' },
+                { label: 'Canvas/WebGL (game, visualization, creative tool)', next: 'v1' },
+            ],
+        },
+        q2: {
+            question: 'Do you need SEO / server-side rendering?',
+            options: [
+                { label: 'Yes', next: 'v2' },
+                { label: 'No, it\'s an app', next: 'q3' },
+            ],
+        },
+        q3: {
+            question: 'Do you have an existing C/C++/Rust codebase to port?',
+            options: [
+                { label: 'Yes', next: 'v3' },
+                { label: 'No, starting fresh', next: 'q4' },
+            ],
+        },
+        q4: {
+            question: 'How much do you hate JavaScript?',
+            options: [
+                { label: 'Enough to accept 2MB+ binaries and worse tooling', next: 'v4' },
+                { label: 'Not that much', next: 'v5' },
+            ],
+        },
+    };
+
+    const verdicts = {
+        v1: {
+            cls: 'v1',
+            title: 'Canvas + WASM is your path.',
+            text: 'Minimal JS shim, all logic in your language. Consider: Bevy (Rust), macroquad (Rust), Raylib bindings (multi-language). This is WASM\'s sweet spot for frontend work.',
+        },
+        v2: {
+            cls: 'v2',
+            title: 'WASM-only frontend won\'t work here.',
+            text: 'Consider: HTMX + server-side language (Go, Rust, etc.) — you get your "real language" on the server without the WASM complexity.',
+        },
+        v3: {
+            cls: 'v3',
+            title: 'Port to WASM with thin JS glue.',
+            text: 'This is WASM\'s original use case. Photoshop, Figma, and AutoCAD all did this. Your existing code runs in the browser with minimal changes.',
+        },
+        v4: {
+            cls: 'v4',
+            title: 'A WASM framework is your path.',
+            text: 'Leptos/Dioxus for Rust, or Zig\'s experimental web UI — the full SPA experience in a real language. Accept the trade-offs: larger binaries, smaller ecosystem, fewer tutorials. But the DX is getting better fast.',
+        },
+        v5: {
+            cls: 'v5',
+            title: 'Consider HTMX.',
+            text: 'It might give you what you actually want (minimal JS, server-driven UI) without the complexity of WASM. If you need client-side interactivity, vanilla JS or Alpine.js with a WASM module for heavy computation is the pragmatic choice.',
+        },
+    };
+
+    // Build the tree DOM
+    const steps = {};
+    let currentPath = [];
+
+    function buildTree() {
+        treeContainer.innerHTML = '';
+
+        // Q1 is always visible
+        for (const qKey of ['q1', 'q2', 'q3', 'q4']) {
+            const q = tree[qKey];
+            const stepEl = document.createElement('div');
+            stepEl.className = 'dt-step' + (qKey === 'q1' ? ' visible' : '');
+            stepEl.id = 'dt-' + qKey;
+
+            const questionEl = document.createElement('div');
+            questionEl.className = 'dt-question';
+            questionEl.innerHTML = `<span class="q-label">${qKey.toUpperCase()}</span>${q.question}`;
+            stepEl.appendChild(questionEl);
+
+            const optionsEl = document.createElement('div');
+            optionsEl.className = 'dt-options';
+
+            q.options.forEach(opt => {
+                const optEl = document.createElement('div');
+                optEl.className = 'dt-option';
+                optEl.textContent = opt.label;
+
+                optEl.addEventListener('click', () => {
+                    // Mark selected
+                    optionsEl.querySelectorAll('.dt-option').forEach(o => o.classList.remove('selected'));
+                    optEl.classList.add('selected');
+
+                    // Hide everything after this step
+                    hideAfter(qKey);
+
+                    // Show next
+                    if (opt.next.startsWith('v')) {
+                        showVerdict(opt.next);
+                    } else {
+                        const nextEl = document.getElementById('dt-' + opt.next);
+                        if (nextEl) nextEl.classList.add('visible');
+                    }
+                });
+
+                optionsEl.appendChild(optEl);
+            });
+
+            stepEl.appendChild(optionsEl);
+            treeContainer.appendChild(stepEl);
+        }
+
+        // Verdict boxes
+        for (const [vKey, v] of Object.entries(verdicts)) {
+            const vEl = document.createElement('div');
+            vEl.className = `dt-verdict ${v.cls}`;
+            vEl.id = 'dt-' + vKey;
+            vEl.innerHTML = `<strong>${v.title}</strong>${v.text}`;
+            treeContainer.appendChild(vEl);
+        }
+
+        // Reset button
+        const resetDiv = document.createElement('div');
+        resetDiv.className = 'dt-reset';
+        resetDiv.id = 'dt-reset';
+        resetDiv.style.display = 'none';
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Start over';
+        resetBtn.addEventListener('click', () => {
+            buildTree();
+        });
+        resetDiv.appendChild(resetBtn);
+        treeContainer.appendChild(resetDiv);
+    }
+
+    function hideAfter(qKey) {
+        const order = ['q1', 'q2', 'q3', 'q4'];
+        const idx = order.indexOf(qKey);
+        for (let i = idx + 1; i < order.length; i++) {
+            const el = document.getElementById('dt-' + order[i]);
+            if (el) {
+                el.classList.remove('visible');
+                el.querySelectorAll('.dt-option').forEach(o => o.classList.remove('selected'));
+            }
+        }
+        // Hide all verdicts
+        for (const vKey of Object.keys(verdicts)) {
+            const el = document.getElementById('dt-' + vKey);
+            if (el) el.classList.remove('visible');
+        }
+        document.getElementById('dt-reset').style.display = 'none';
+    }
+
+    function showVerdict(vKey) {
+        const el = document.getElementById('dt-' + vKey);
+        if (el) el.classList.add('visible');
+        document.getElementById('dt-reset').style.display = 'block';
+    }
+
+    buildTree();
+});
+</script>
+
+</body>
+</html>
