@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM on the Edge: Cloudflare Workers</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="../../shared/vendor/katex/katex.min.css">
+    <script src="../../shared/vendor/katex/katex.min.js"></script>
+    <script src="../../shared/vendor/katex/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="../../shared/vendor/plotly.min.js"></script>
+
+    <!-- Shared styles and utilities -->
+    <link rel="stylesheet" href="../../shared/explore.css">
+    <script src="../../shared/explore.js"></script>
+
+    <style>
+        /* ── Page-specific styles ──────────────────────────────── */
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--color-border);
+            text-align: left;
+        }
+
+        .comparison-table th {
+            background: var(--color-surface);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--color-text-muted);
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--color-accent-light);
+        }
+
+        /* ── Use Case Cards ──────────────────────────────────── */
+
+        .usecase-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .usecase-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .usecase-column h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid;
+        }
+
+        .usecase-column.good h3 {
+            color: #16a34a;
+            border-color: #16a34a;
+        }
+
+        .usecase-column.bad h3 {
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .usecase-card {
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            margin-bottom: 0.6rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            overflow: hidden;
+        }
+
+        .usecase-card:hover {
+            border-color: var(--color-accent);
+        }
+
+        .good .usecase-card {
+            border-left: 3px solid #16a34a;
+        }
+
+        .bad .usecase-card {
+            border-left: 3px solid #dc2626;
+        }
+
+        .usecase-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .usecase-card-header .expand-arrow {
+            font-size: 0.7rem;
+            color: var(--color-text-muted);
+            transition: transform 0.2s;
+        }
+
+        .usecase-card.open .usecase-card-header .expand-arrow {
+            transform: rotate(90deg);
+        }
+
+        .usecase-card-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .usecase-card.open .usecase-card-detail {
+            max-height: 200px;
+        }
+
+        .usecase-card-detail-inner {
+            padding: 0 0.75rem 0.75rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            line-height: 1.5;
+            border-top: 1px dashed var(--color-border);
+            padding-top: 0.5rem;
+            margin-top: 0;
+        }
+
+        /* ── Worker Code Comparison ───────────────────────────── */
+
+        .code-comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-top: 1rem;
+        }
+
+        .code-comparison-table th,
+        .code-comparison-table td {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .code-comparison-table th {
+            background: var(--color-surface);
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--color-text-muted);
+        }
+
+        .code-comparison-table td:first-child {
+            font-weight: 600;
+            text-align: left;
+        }
+
+        /* ── Location Selector ────────────────────────────────── */
+
+        .location-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .location-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 2px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-surface);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .location-btn:hover {
+            border-color: var(--color-accent);
+            background: var(--color-accent-light);
+        }
+
+        .location-btn.active {
+            border-color: var(--color-accent);
+            background: var(--color-accent);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="exploration">
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <header>
+        <h1>WASM on the Edge: Cloudflare Workers</h1>
+        <div class="subtitle">
+            Why you'd run WebAssembly on a server, and when it makes sense
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="intro">
+        <p>
+            WebAssembly was designed for the browser. Then people realized: the same properties
+            that make it good for browsers — sandboxing, near-native speed, language-agnostic —
+            make it interesting for servers too. Cloudflare Workers run your code at the edge,
+            in V8 isolates, and they can run WASM. The question isn't whether you <em>can</em> —
+            it's whether you <em>should</em>.
+        </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 1: Containers vs Isolates vs WASM -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox1">
+        <h2>Sandbox 1: Containers vs Isolates vs WASM</h2>
+        <div class="description">
+            <p>
+                Three ways to run code on a server. They differ in how much infrastructure
+                wraps your function. Adjust module complexity and request rate to see how
+                the trade-offs shift.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart1"></div>
+            <div class="controls" id="controls1"></div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Container</th>
+                        <th>JS Isolate</th>
+                        <th>WASM Isolate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Languages</td><td>Any</td><td>JS/TS</td><td>Any &rarr; WASM</td></tr>
+                    <tr><td>Cold start</td><td>100-500ms</td><td>~5ms</td><td>~5ms</td></tr>
+                    <tr><td>Memory</td><td>128MB+</td><td>1-5MB</td><td>1-5MB</td></tr>
+                    <tr><td>CPU limits</td><td>Minutes</td><td>10-50ms/req</td><td>10-50ms/req</td></tr>
+                    <tr><td>Filesystem</td><td>Full</td><td>None</td><td>None (WASI partial)</td></tr>
+                    <tr><td>Network</td><td>Full</td><td>Fetch only</td><td>Fetch only</td></tr>
+                    <tr><td>Best for</td><td>Long-running, stateful</td><td>Short, fast, stateless</td><td>CPU-intensive, polyglot</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="readout">
+            Workers don't use containers. They use V8 isolates — lightweight execution
+            contexts within a single V8 process. A single machine can run thousands of
+            isolates. WASM modules load <em>inside</em> these isolates. The cold start is
+            V8's isolate creation, not your module's compilation (that's AOT-cached by Cloudflare).
+        </div>
+    </section>
+
+    <div class="connection">
+        So Workers are fast to start and cheap to run. But <em>where</em> they run is the real differentiator...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 2: The Edge: Geography as Architecture -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox2">
+        <h2>Sandbox 2: The Edge — Geography as Architecture</h2>
+        <div class="description">
+            <p>
+                Pick a user location and see how latency changes across three deployment
+                strategies. The computation is identical — only the network distance differs.
+            </p>
+        </div>
+
+        <div class="sandbox-content">
+            <div class="location-selector" id="location-selector"></div>
+            <div class="chart-container" id="chart2"></div>
+        </div>
+
+        <div class="readout">
+            The "edge" isn't about computation speed — it's about proximity. A Worker running
+            at the edge is physically closer to the user. The computation is identical to what
+            you'd run in us-east-1, but the network round-trip is shorter. This matters most
+            for: latency-sensitive APIs, real-time features, and globally distributed users.
+        </div>
+    </section>
+
+    <div class="connection">
+        Geography helps with latency. But not every workload benefits from being at the edge...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 3: Good Use Cases vs Fighting It -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox3">
+        <h2>Sandbox 3: Good Use Cases vs Fighting It</h2>
+        <div class="description">
+            <p>
+                Not every workload belongs at the edge. Click any card to see the reasoning.
+            </p>
+        </div>
+
+        <div class="sandbox-content" style="display: block;">
+            <div class="usecase-columns" id="usecase-columns">
+                <div class="usecase-column good" id="good-usecases">
+                    <h3>Good use cases</h3>
+                </div>
+                <div class="usecase-column bad" id="bad-usecases">
+                    <h3>Fighting it</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="readout">
+            The pattern: edge computing is great when you can make a decision <em>without</em>
+            talking to a centralized service. Auth validation? The JWT has everything you need.
+            Image resizing? The image is in the request. CRUD with a database? You're just
+            adding a hop. Match the architecture to the data flow.
+        </div>
+    </section>
+
+    <div class="connection">
+        Now that you know when edge computing helps, let's see what the code actually looks like...
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 4: Anatomy of a Worker -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox4">
+        <h2>Sandbox 4: Anatomy of a Worker</h2>
+        <div class="description">
+            <p>
+                The same Worker in three languages: accept a JSON request, validate an API key,
+                transform the payload, return the result. The runtime behavior is identical —
+                only the developer experience differs.
+            </p>
+        </div>
+
+        <div class="sandbox-content" style="display: block;">
+            <div id="worker-tabs"></div>
+
+            <table class="code-comparison-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>JavaScript</th>
+                        <th>Rust</th>
+                        <th>Go (TinyGo)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Lines of code</td><td>~15</td><td>~20</td><td>~30</td></tr>
+                    <tr><td>Binary size</td><td>0 (native)</td><td>~200KB</td><td>~5KB (TinyGo)</td></tr>
+                    <tr><td>Type safety</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+                    <tr><td>Ecosystem</td><td>Full npm</td><td>wasm-compatible crates</td><td>Limited (no goroutines)</td></tr>
+                    <tr><td>DX</td><td>Best (native runtime)</td><td>Good (workers-rs)</td><td>Rough (manual js.Value)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="readout">
+            The JavaScript version is 15 lines. The Rust version is 20 lines but adds type
+            safety and access to the Rust ecosystem. The TinyGo version is 30 lines with the
+            most friction (manual js.Value wrangling). The runtime behavior is identical — only
+            the developer experience differs. Pick based on what matters to you: ecosystem?
+            type safety? existing codebase?
+        </div>
+    </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- All JavaScript -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllMath();
+
+    // ── Sandbox 1: Containers vs Isolates vs WASM ───────────
+
+    let moduleComplexity = 1;
+    let requestRate = 1;
+
+    function updateChart1() {
+        // Base values
+        const containerColdBase = 300;
+        const isolateColdBase = 5;
+        const wasmColdBase = 5;
+
+        const containerMemBase = 128;
+        const isolateMemBase = 3;
+        const wasmMemBase = 3;
+
+        const containerLatencyBase = 15;
+        const isolateLatencyBase = 2;
+        const wasmLatencyBase = 1.5;
+
+        // Complexity multiplier: more complex = bigger cold start, more memory
+        const cFactor = 1 + (moduleComplexity - 1) * 0.5;
+
+        // Request rate effect: low rate = cold starts happen more often
+        // At high rates, isolates stay warm so effective cold start contribution drops
+        const coldStartPenalty = Math.max(0.2, 1 - (requestRate - 1) * 0.15);
+
+        const coldStarts = [
+            containerColdBase * cFactor * coldStartPenalty,
+            isolateColdBase * cFactor * coldStartPenalty,
+            wasmColdBase * cFactor * coldStartPenalty * 1.1  // WASM adds ~10% for module load
+        ];
+
+        const memory = [
+            containerMemBase * cFactor,
+            isolateMemBase * cFactor,
+            wasmMemBase * cFactor * 1.2
+        ];
+
+        const latency = [
+            containerLatencyBase + (moduleComplexity - 1) * 3,
+            isolateLatencyBase + (moduleComplexity - 1) * 1.5,
+            wasmLatencyBase + (moduleComplexity - 1) * 1.2
+        ];
+
+        const models = ['Container<br>(Docker/Lambda)', 'V8 Isolate<br>(Workers JS)', 'WASM in Isolate<br>(Workers WASM)'];
+        const colors = ['#ef4444', '#f7df1e', '#654ff0'];
+
+        const trace1 = {
+            x: models,
+            y: coldStarts,
+            name: 'Cold Start (ms)',
+            type: 'bar',
+            marker: { color: colors.map(c => c + 'cc') },
+            text: coldStarts.map(v => v.toFixed(0) + 'ms'),
+            textposition: 'outside',
+        };
+
+        const trace2 = {
+            x: models,
+            y: memory,
+            name: 'Memory (MB)',
+            type: 'bar',
+            marker: { color: colors.map(c => c + '99') },
+            text: memory.map(v => v.toFixed(0) + 'MB'),
+            textposition: 'outside',
+            visible: false,
+        };
+
+        const trace3 = {
+            x: models,
+            y: latency,
+            name: 'p99 Latency (ms)',
+            type: 'bar',
+            marker: { color: colors.map(c => c + '66') },
+            text: latency.map(v => v.toFixed(1) + 'ms'),
+            textposition: 'outside',
+            visible: false,
+        };
+
+        const buttons = [
+            {
+                label: 'Cold Start (ms)',
+                method: 'update',
+                args: [{ visible: [true, false, false] }, { yaxis: { title: 'Cold Start (ms)', gridcolor: '#f0f0f0' } }],
+            },
+            {
+                label: 'Memory (MB)',
+                method: 'update',
+                args: [{ visible: [false, true, false] }, { yaxis: { title: 'Memory Overhead (MB)', gridcolor: '#f0f0f0' } }],
+            },
+            {
+                label: 'p99 Latency (ms)',
+                method: 'update',
+                args: [{ visible: [false, false, true] }, { yaxis: { title: 'Request Latency p99 (ms)', gridcolor: '#f0f0f0' } }],
+            },
+        ];
+
+        Plotly.newPlot('chart1', [trace1, trace2, trace3], plotlyDefaults({
+            title: { text: 'Server-Side Execution Models' },
+            yaxis: { title: 'Cold Start (ms)', gridcolor: '#f0f0f0' },
+            xaxis: { gridcolor: '#f0f0f0' },
+            showlegend: false,
+            margin: { t: 60, r: 20, b: 60, l: 60 },
+            updatemenus: [{
+                type: 'buttons',
+                direction: 'right',
+                x: 0.5,
+                xanchor: 'center',
+                y: 1.12,
+                buttons: buttons,
+                bgcolor: '#f8f8f8',
+                bordercolor: '#e0e0e0',
+                font: { size: 11 },
+            }],
+        }), { responsive: true });
+    }
+
+    const controls1 = document.getElementById('controls1');
+
+    createSlider(controls1, {
+        label: 'Module complexity', id: 'complexity',
+        min: 1, max: 5, step: 1, value: 1,
+        format: v => ['Simple', 'Low', 'Medium', 'High', 'Complex'][v - 1],
+        onChange: v => { moduleComplexity = v; updateChart1(); },
+    });
+
+    createSlider(controls1, {
+        label: 'Request rate', id: 'req-rate',
+        min: 1, max: 5, step: 1, value: 1,
+        format: v => ['Very low', 'Low', 'Medium', 'High', 'Very high'][v - 1],
+        onChange: v => { requestRate = v; updateChart1(); },
+    });
+
+    updateChart1();
+
+    // ── Sandbox 2: The Edge — Geography as Architecture ─────
+
+    const latencyData = {
+        'US-East':        { single: 20,  multi: 20,  edge: 5  },
+        'US-West':        { single: 70,  multi: 30,  edge: 5  },
+        'Europe':         { single: 100, multi: 30,  edge: 8  },
+        'Asia':           { single: 200, multi: 60,  edge: 10 },
+        'Australia':      { single: 250, multi: 80,  edge: 12 },
+        'South America':  { single: 150, multi: 50,  edge: 8  },
+        'Africa':         { single: 200, multi: 100, edge: 15 },
+    };
+
+    const locations = Object.keys(latencyData);
+    let selectedLocation = 'Europe';
+
+    function updateChart2() {
+        const d = latencyData[selectedLocation];
+        const strategies = ['Single Region<br>(us-east-1)', 'Multi-Region<br>(3 regions)', 'Edge<br>(300+ PoPs)'];
+        const values = [d.single, d.multi, d.edge];
+        const colors = ['#ef4444', '#f59e0b', '#22c55e'];
+
+        Plotly.newPlot('chart2', [{
+            x: strategies,
+            y: values,
+            type: 'bar',
+            marker: { color: colors },
+            text: values.map(v => v + 'ms'),
+            textposition: 'outside',
+            textfont: { size: 14, color: '#333' },
+        }], plotlyDefaults({
+            title: { text: `Network Latency from ${selectedLocation}` },
+            yaxis: { title: 'Round-trip Latency (ms)', gridcolor: '#f0f0f0', range: [0, Math.max(...values) * 1.3] },
+            xaxis: { gridcolor: '#f0f0f0' },
+            showlegend: false,
+            margin: { t: 50, r: 20, b: 60, l: 60 },
+        }), { responsive: true });
+    }
+
+    const locationSelector = document.getElementById('location-selector');
+    locations.forEach(loc => {
+        const btn = document.createElement('button');
+        btn.className = 'location-btn' + (loc === selectedLocation ? ' active' : '');
+        btn.textContent = loc;
+        btn.addEventListener('click', () => {
+            locationSelector.querySelectorAll('.location-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedLocation = loc;
+            updateChart2();
+        });
+        locationSelector.appendChild(btn);
+    });
+
+    updateChart2();
+
+    // ── Sandbox 3: Good Use Cases vs Fighting It ────────────
+
+    const goodUsecases = [
+        {
+            title: 'URL routing / rewriting',
+            detail: 'Redirect, rewrite, or proxy requests before they hit origin. ~0ms compute, all latency savings. The request itself contains everything the Worker needs to make a decision.',
+        },
+        {
+            title: 'Auth token validation',
+            detail: 'Decode and verify JWTs at the edge. The token is self-contained — signature, claims, expiry are all in the request header. Reject bad requests before they reach your API. This is where WASM helps: bring your existing crypto library.',
+        },
+        {
+            title: 'Image transformation',
+            detail: 'Resize, crop, format-convert on the fly. The image is in the request (or cacheable from origin). This is where WASM shines — bring your C/Rust image library (e.g., libvips, image-rs) compiled to WASM. CPU-intensive, self-contained per request.',
+        },
+        {
+            title: 'A/B testing',
+            detail: 'Route users to variants at the edge. No client-side flicker (the HTML is different before it reaches the browser), no origin round-trip to decide. Hash the user ID, pick a bucket, rewrite the response.',
+        },
+        {
+            title: 'API gateway / rate limiting',
+            detail: 'Count requests, enforce limits, transform payloads. Stateless per-request logic (rate state can live in Cloudflare KV or Durable Objects). The edge sees the request first — reject early, save origin load.',
+        },
+        {
+            title: 'Running existing native libraries',
+            detail: 'Crypto, image processing, data transformation. WASM lets you bring C/C++/Rust code to the edge without rewriting in JS. This is the "polyglot" argument — you already have the code, you just need it to run somewhere new.',
+        },
+    ];
+
+    const badUsecases = [
+        {
+            title: 'CRUD apps with a database',
+            detail: 'Your Worker is at the edge, your database is in us-east-1. Every request still round-trips to the DB. Edge doesn\'t help — it might even hurt (edge-to-DB latency can be worse than client-to-DB). Unless you use Cloudflare D1/KV/Durable Objects, but those have their own trade-offs (eventual consistency, size limits, pricing).',
+        },
+        {
+            title: 'Long-running computations',
+            detail: 'Workers have CPU time limits (typically 10-50ms per request on the free plan, 30s on paid). You can\'t train a model, process a video, or run a complex simulation. These need containers, VMs, or dedicated compute.',
+        },
+        {
+            title: 'Stateful applications',
+            detail: 'Workers are stateless. Each request might hit a different isolate on a different machine. Session state, in-memory caches, WebSocket connections — all require external storage (KV, D1, Durable Objects). Durable Objects help, but they\'re pinned to a single location, giving up the edge advantage.',
+        },
+        {
+            title: 'Full language ecosystem',
+            detail: 'Not all libraries compile to WASM. Network calls, file I/O, threads, and OS-specific code won\'t work. If your Rust crate depends on tokio for async I/O, it won\'t compile to Workers WASM. You need libraries explicitly built for the wasm32 target.',
+        },
+    ];
+
+    function buildUsecaseCards(container, usecases) {
+        usecases.forEach(uc => {
+            const card = document.createElement('div');
+            card.className = 'usecase-card';
+
+            const header = document.createElement('div');
+            header.className = 'usecase-card-header';
+            header.innerHTML = `<span class="expand-arrow">&#9654;</span> ${uc.title}`;
+
+            const detail = document.createElement('div');
+            detail.className = 'usecase-card-detail';
+            const detailInner = document.createElement('div');
+            detailInner.className = 'usecase-card-detail-inner';
+            detailInner.textContent = uc.detail;
+            detail.appendChild(detailInner);
+
+            card.appendChild(header);
+            card.appendChild(detail);
+
+            card.addEventListener('click', () => {
+                card.classList.toggle('open');
+            });
+
+            container.appendChild(card);
+        });
+    }
+
+    buildUsecaseCards(document.getElementById('good-usecases'), goodUsecases);
+    buildUsecaseCards(document.getElementById('bad-usecases'), badUsecases);
+
+    // ── Sandbox 4: Anatomy of a Worker ──────────────────────
+
+    const workerTabs = document.getElementById('worker-tabs');
+    createTabbedCode(workerTabs, [
+        { lang: 'js', label: 'JavaScript', code: `export default {
+  async fetch(request) {
+    // Validate API key
+    const key = request.headers.get('X-API-Key');
+    if (key !== 'secret-key-123') {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Transform payload
+    const body = await request.json();
+    body.name = body.name.toUpperCase();
+    body.processed_at = new Date().toISOString();
+
+    return new Response(JSON.stringify(body), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  },
+};` },
+        { lang: 'rust', label: 'Rust (workers-rs)', code: `use worker::*;
+
+#[event(fetch)]
+async fn main(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
+    // Validate API key
+    let key = req.headers().get("X-API-Key")?;
+    if key.as_deref() != Some("secret-key-123") {
+        return Response::error("Unauthorized", 401);
+    }
+
+    // Transform payload
+    let mut body: serde_json::Value = req.json().await?;
+    if let Some(name) = body["name"].as_str() {
+        body["name"] = serde_json::Value::String(name.to_uppercase());
+    }
+    body["processed_at"] = serde_json::Value::String(
+        chrono::Utc::now().to_rfc3339()
+    );
+
+    Response::from_json(&body)
+}` },
+        { lang: 'go', label: 'Go (TinyGo)', code: `package main
+
+import (
+    "encoding/json"
+    "strings"
+    "time"
+    "syscall/js"
+)
+
+func handleRequest(this js.Value, args []js.Value) interface{} {
+    request := args[0]
+    headers := request.Get("headers")
+
+    // Validate API key
+    key := headers.Call("get", "X-API-Key").String()
+    if key != "secret-key-123" {
+        return js.Global().Get("Response").New("Unauthorized", map[string]interface{}{
+            "status": 401,
+        })
+    }
+
+    // Transform payload (simplified)
+    // In real TinyGo Workers, you'd use a helper library
+    body := map[string]interface{}{
+        "name":         strings.ToUpper(getName(request)),
+        "processed_at": time.Now().UTC().Format(time.RFC3339),
+    }
+
+    jsonBytes, _ := json.Marshal(body)
+    return js.Global().Get("Response").New(string(jsonBytes))
+}
+
+func main() {
+    js.Global().Set("handleRequest", js.FuncOf(handleRequest))
+    select {}
+}` },
+    ]);
+});
+</script>
+
+</body>
+</html>
