@@ -762,10 +762,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const languages = [
         { name: 'Hand-written WAT', size: 41, color: '#654ff0',
           detail: 'Nothing but the function, type signature, and export. Zero overhead.' },
-        { name: 'Zig (no runtime)', size: 200, color: '#f7a41d',
-          detail: 'Minimal function prologue/epilogue. No allocator, no runtime. Zig compiles to near-bare-metal WASM.' },
+        { name: 'Odin (experimental)', size: 300, color: '#3882d6',
+          detail: 'Odin\'s WASM target is experimental but functional. Minimal runtime overhead — no GC, manual memory management. Slightly larger than bare Rust/Zig due to runtime context setup.' },
         { name: 'Rust (no_std)', size: 200, color: '#ce422b',
-          detail: 'Similar to Zig — with #[no_mangle] and no_std, Rust emits almost nothing beyond your code. No allocator, no panic handler (if you use panic=abort).' },
+          detail: 'With #[no_mangle] and no_std, Rust emits almost nothing beyond your code. No allocator, no panic handler (if you use panic=abort).' },
         { name: 'TinyGo', size: 5000, color: '#5dc9e2',
           detail: 'Includes a small GC (~2KB), memory allocator, and minimal runtime. Much smaller than full Go because TinyGo reimplements the runtime from scratch.' },
         { name: 'Rust (with std)', size: 2000000, color: '#ce422b',
