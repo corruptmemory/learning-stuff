@@ -3219,11 +3219,11 @@ func handleTable(w http.ResponseWriter, r *http.Request) {
   </table>
 </div>
 
-<script src="https://unpkg.com/alpinejs" defer></script>`;
+<script src="https://unpkg.com/alpinejs" defer><\/script>`;
 
     const svelte = `<!-- Filterable/Sortable Language Table — Svelte (.svelte) -->
 <!-- Compiles to vanilla JS at build time. No runtime framework. -->
-<script>
+<scr` + `ipt>
   const data = [
     { language: 'Go',     year: 2009, paradigm: 'Imperative' },
     { language: 'Rust',   year: 2010, paradigm: 'Multi-paradigm' },
@@ -3248,7 +3248,7 @@ func handleTable(w http.ResponseWriter, r *http.Request) {
       const v = a[sortCol] > b[sortCol] ? 1 : -1;
       return sortAsc ? v : -v;
     });
-</script>
+<\/script>
 
 <!-- RENDER: enhanced HTML — looks like HTML, compiles to efficient updates -->
 <!-- EVENTS: on:click, bind:value — familiar HTML-like syntax -->
