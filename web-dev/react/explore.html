@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React: Why Crazy People Use It</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="../../shared/vendor/katex/katex.min.css">
+    <script src="../../shared/vendor/katex/katex.min.js"></script>
+    <script src="../../shared/vendor/katex/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="../../shared/vendor/plotly.min.js"></script>
+
+    <!-- React -->
+    <script src="../../shared/vendor/react.development.js"></script>
+    <script src="../../shared/vendor/react-dom.development.js"></script>
+    <script src="../../shared/vendor/babel.min.js"></script>
+
+    <!-- Shared styles and utilities -->
+    <link rel="stylesheet" href="../../shared/explore.css">
+    <script src="../../shared/explore.js"></script>
+
+    <style>
+        /* ── Page-specific styles ──────────────────────────────── */
+
+        .widget-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .widget-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .widget-column {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .widget-header {
+            padding: 0.6rem 1rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: white;
+        }
+
+        .widget-header.vanilla {
+            background: #2563eb;
+        }
+
+        .widget-header.react-header {
+            background: #0ea5e9;
+        }
+
+        .widget-body {
+            padding: 1rem;
+        }
+
+        .widget-filter {
+            width: 100%;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.85rem;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            margin-bottom: 0.75rem;
+            font-family: var(--font-body);
+        }
+
+        .widget-filter:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 2px var(--color-accent-light);
+        }
+
+        .widget-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .widget-table th {
+            text-align: left;
+            padding: 0.4rem 0.6rem;
+            border-bottom: 2px solid var(--color-border);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .widget-table th:hover {
+            color: var(--color-accent);
+        }
+
+        .widget-table th .sort-arrow {
+            margin-left: 0.3em;
+            font-size: 0.7rem;
+        }
+
+        .widget-table td {
+            padding: 0.35rem 0.6rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .widget-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .widget-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--color-border);
+            background: var(--color-bg);
+            font-size: 0.8rem;
+        }
+
+        .dom-counter {
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .dom-counter.vanilla {
+            color: #2563eb;
+        }
+
+        .dom-counter.react-counter {
+            color: #0ea5e9;
+        }
+
+        .toggle-code-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-surface);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .toggle-code-btn:hover {
+            background: var(--color-accent-light);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+        .code-reveal {
+            display: none;
+            margin-top: 0;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .code-reveal.open {
+            display: block;
+        }
+
+        .code-reveal pre {
+            margin: 0;
+            padding: 0.75rem 1rem;
+            overflow-x: auto;
+            background: #1a1a2e;
+            color: #a0a0c0;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            line-height: 1.55;
+        }
+
+        .code-reveal pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .rapid-fire-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .rapid-fire-btn {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 2px solid var(--color-accent);
+            border-radius: 6px;
+            background: var(--color-accent-light);
+            color: var(--color-accent);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .rapid-fire-btn:hover {
+            background: var(--color-accent);
+            color: white;
+        }
+
+        .rapid-fire-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .rapid-fire-status {
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+            margin-top: 0.5rem;
+            min-height: 1.2em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="exploration">
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <header>
+        <h1>React: Why Crazy People Use It</h1>
+        <div class="subtitle">
+            What it actually does, how it works, and whether you need it
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="intro">
+        <p>
+            React is the most popular frontend framework in the world. That doesn't make it good
+            — it makes it worth understanding. This exploration will show you what problem React
+            solves, how it works under the hood, and when it's the right (or wrong) tool. No
+            prior React knowledge assumed.
+        </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 1: The Problem React Solves -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox1">
+        <h2>Sandbox 1: The Problem React Solves</h2>
+        <div class="description">
+            <p>
+                Two implementations of the same widget: a filterable, sortable table. The left
+                uses vanilla DOM manipulation — the way a competent developer would build it
+                without a framework. The right uses React. They look and behave identically.
+                Watch the DOM operation counters.
+            </p>
+        </div>
+
+        <div class="widget-grid">
+            <!-- Vanilla JS Column -->
+            <div class="widget-column" id="vanilla-column">
+                <div class="widget-header vanilla">Vanilla JS</div>
+                <div class="widget-body" id="vanilla-widget"></div>
+                <div class="widget-footer">
+                    <span>DOM ops: <span class="dom-counter vanilla" id="vanilla-dom-count">0</span></span>
+                    <button class="toggle-code-btn" id="vanilla-toggle-code">Show code</button>
+                </div>
+                <div class="code-reveal" id="vanilla-code-reveal">
+                    <pre><code id="vanilla-code-display"></code></pre>
+                </div>
+            </div>
+
+            <!-- React Column -->
+            <div class="widget-column" id="react-column">
+                <div class="widget-header react-header">React</div>
+                <div class="widget-body" id="react-widget"></div>
+                <div class="widget-footer">
+                    <span>DOM mutations: <span class="dom-counter react-counter" id="react-dom-count">0</span></span>
+                    <button class="toggle-code-btn" id="react-toggle-code">Show code</button>
+                </div>
+                <div class="code-reveal" id="react-code-reveal">
+                    <pre><code id="react-code-display"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rapid Fire -->
+        <div class="rapid-fire-container">
+            <button class="rapid-fire-btn" id="rapid-fire-btn">Rapid Fire: 20 operations</button>
+            <div class="rapid-fire-status" id="rapid-fire-status"></div>
+        </div>
+
+        <div class="readout">
+            The vanilla JS version works. It's not even bad code — it's the natural way to build
+            this without a framework. But every user interaction triggers a full rebuild of the table
+            body. The React version rebuilds a <em>virtual</em> representation, diffs it against the
+            current one, and only touches the DOM nodes that actually changed. For 10 rows, this
+            barely matters. For 1000 rows, it's the difference between smooth and janky.
+        </div>
+    </section>
+
+    <div class="connection">
+        Now you've seen what React does differently. But how does this "virtual DOM diffing" actually work?
+    </div>
+
+    <!-- Sandbox 2: Virtual DOM will go here -->
+    <!-- Sandbox 3: Hooks internals will go here -->
+    <!-- Sandbox 4: Decision framework will go here -->
+    <!-- Sandbox 5: Rosetta Stone will go here -->
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Vanilla JS Widget -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllMath();
+
+    // ── Shared data ────────────────────────────────────────────
+    const LANGUAGES = [
+        { language: 'Go',      year: 2009, paradigm: 'Imperative' },
+        { language: 'Rust',    year: 2010, paradigm: 'Multi-paradigm' },
+        { language: 'Odin',    year: 2016, paradigm: 'Imperative' },
+        { language: 'Jai',     year: 2014, paradigm: 'Imperative' },
+        { language: 'Python',  year: 1991, paradigm: 'Multi-paradigm' },
+        { language: 'Haskell', year: 1990, paradigm: 'Functional' },
+        { language: 'Scala',   year: 2004, paradigm: 'Multi-paradigm' },
+        { language: 'Ruby',    year: 1995, paradigm: 'OO' },
+        { language: 'C',       year: 1972, paradigm: 'Imperative' },
+        { language: 'Zig',     year: 2016, paradigm: 'Imperative' },
+    ];
+
+    // ── Vanilla JS Implementation ──────────────────────────────
+
+    let vanillaDomOps = 0;
+    const vanillaCounterEl = document.getElementById('vanilla-dom-count');
+
+    function trackOp() {
+        vanillaDomOps++;
+        vanillaCounterEl.textContent = vanillaDomOps;
+    }
+
+    // State
+    let vanillaSortCol = 'language';
+    let vanillaSortAsc = true;
+    let vanillaFilter = '';
+
+    function getFilteredSorted(data, sortCol, sortAsc, filter) {
+        let rows = data;
+        if (filter) {
+            const f = filter.toLowerCase();
+            rows = rows.filter(r =>
+                r.language.toLowerCase().includes(f) ||
+                String(r.year).includes(f) ||
+                r.paradigm.toLowerCase().includes(f)
+            );
+        }
+        rows = [...rows].sort((a, b) => {
+            let va = a[sortCol], vb = b[sortCol];
+            if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+            if (va < vb) return sortAsc ? -1 : 1;
+            if (va > vb) return sortAsc ? 1 : -1;
+            return 0;
+        });
+        return rows;
+    }
+
+    function buildVanillaWidget() {
+        const container = document.getElementById('vanilla-widget');
+
+        // Filter input
+        const input = document.createElement('input');
+        trackOp();
+        input.type = 'text';
+        input.className = 'widget-filter';
+        input.placeholder = 'Filter...';
+        input.addEventListener('input', () => {
+            vanillaFilter = input.value;
+            renderVanillaTable();
+        });
+        container.appendChild(input);
+        trackOp();
+
+        // Table
+        const table = document.createElement('table');
+        trackOp();
+        table.className = 'widget-table';
+
+        // Thead
+        const thead = document.createElement('thead');
+        trackOp();
+        const headerRow = document.createElement('tr');
+        trackOp();
+
+        const columns = [
+            { key: 'language', label: 'Language' },
+            { key: 'year', label: 'Year' },
+            { key: 'paradigm', label: 'Paradigm' },
+        ];
+
+        columns.forEach(col => {
+            const th = document.createElement('th');
+            trackOp();
+            th.dataset.col = col.key;
+            th.addEventListener('click', () => {
+                if (vanillaSortCol === col.key) {
+                    vanillaSortAsc = !vanillaSortAsc;
+                } else {
+                    vanillaSortCol = col.key;
+                    vanillaSortAsc = true;
+                }
+                renderVanillaTable();
+            });
+            headerRow.appendChild(th);
+            trackOp();
+        });
+
+        thead.appendChild(headerRow);
+        trackOp();
+        table.appendChild(thead);
+        trackOp();
+
+        // Tbody
+        const tbody = document.createElement('tbody');
+        trackOp();
+        tbody.id = 'vanilla-tbody';
+        table.appendChild(tbody);
+        trackOp();
+
+        container.appendChild(table);
+        trackOp();
+
+        renderVanillaTable();
+    }
+
+    function renderVanillaTable() {
+        const tbody = document.getElementById('vanilla-tbody');
+        const rows = getFilteredSorted(LANGUAGES, vanillaSortCol, vanillaSortAsc, vanillaFilter);
+
+        // Update header sort arrows
+        const ths = tbody.parentElement.querySelectorAll('th');
+        ths.forEach(th => {
+            const col = th.dataset.col;
+            let arrow = '';
+            if (col === vanillaSortCol) {
+                arrow = vanillaSortAsc ? ' \u25B2' : ' \u25BC';
+            }
+            th.textContent = col.charAt(0).toUpperCase() + col.slice(1) + arrow;
+            trackOp();
+        });
+
+        // Clear and rebuild tbody — this is the "problem"
+        while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+            trackOp();
+        }
+
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            trackOp();
+
+            const tdLang = document.createElement('td');
+            trackOp();
+            tdLang.textContent = row.language;
+            trackOp();
+            tr.appendChild(tdLang);
+            trackOp();
+
+            const tdYear = document.createElement('td');
+            trackOp();
+            tdYear.textContent = row.year;
+            trackOp();
+            tr.appendChild(tdYear);
+            trackOp();
+
+            const tdParadigm = document.createElement('td');
+            trackOp();
+            tdParadigm.textContent = row.paradigm;
+            trackOp();
+            tr.appendChild(tdParadigm);
+            trackOp();
+
+            tbody.appendChild(tr);
+            trackOp();
+        });
+    }
+
+    buildVanillaWidget();
+
+    // Expose for rapid fire
+    window.vanillaSetSort = function(col) {
+        if (vanillaSortCol === col) {
+            vanillaSortAsc = !vanillaSortAsc;
+        } else {
+            vanillaSortCol = col;
+            vanillaSortAsc = true;
+        }
+        renderVanillaTable();
+    };
+
+    window.vanillaSetFilter = function(val) {
+        vanillaFilter = val;
+        const input = document.querySelector('#vanilla-widget .widget-filter');
+        if (input) input.value = val;
+        renderVanillaTable();
+    };
+
+    window.getVanillaDomOps = () => vanillaDomOps;
+    window.resetVanillaDomOps = () => { vanillaDomOps = 0; vanillaCounterEl.textContent = '0'; };
+
+    // ── Show code toggles ──────────────────────────────────────
+
+    const vanillaCode = `// State
+let sortCol = 'language', sortAsc = true, filter = '';
+
+function buildWidget(container) {
+    const input = document.createElement('input');
+    input.className = 'widget-filter';
+    input.placeholder = 'Filter...';
+    input.addEventListener('input', () => {
+        filter = input.value;
+        renderTable();
+    });
+    container.appendChild(input);
+
+    const table = document.createElement('table');
+    table.className = 'widget-table';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+
+    ['language', 'year', 'paradigm'].forEach(col => {
+        const th = document.createElement('th');
+        th.addEventListener('click', () => {
+            if (sortCol === col) sortAsc = !sortAsc;
+            else { sortCol = col; sortAsc = true; }
+            renderTable();
+        });
+        headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    container.appendChild(table);
+    renderTable();
+}
+
+function renderTable() {
+    const tbody = document.getElementById('vanilla-tbody');
+    // Update header arrows
+    tbody.parentElement.querySelectorAll('th').forEach(th => {
+        const col = th.dataset.col;
+        th.textContent = col + (col === sortCol
+            ? (sortAsc ? ' \\u25B2' : ' \\u25BC') : '');
+    });
+    // Tear down and rebuild every row
+    while (tbody.firstChild)
+        tbody.removeChild(tbody.firstChild);
+
+    getFilteredSorted(LANGUAGES, sortCol, sortAsc, filter)
+        .forEach(row => {
+            const tr = document.createElement('tr');
+            ['language', 'year', 'paradigm'].forEach(key => {
+                const td = document.createElement('td');
+                td.textContent = row[key];
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+}`;
+
+    const reactCode = `function LanguageTable({ data }) {
+    const [sortCol, setSortCol] = React.useState('language');
+    const [sortAsc, setSortAsc] = React.useState(true);
+    const [filter, setFilter] = React.useState('');
+
+    const handleSort = (col) => {
+        if (sortCol === col) setSortAsc(!sortAsc);
+        else { setSortCol(col); setSortAsc(true); }
+    };
+
+    // Derived data — no manual DOM sync needed
+    const rows = React.useMemo(() => {
+        let r = data;
+        if (filter) {
+            const f = filter.toLowerCase();
+            r = r.filter(row =>
+                row.language.toLowerCase().includes(f) ||
+                String(row.year).includes(f) ||
+                row.paradigm.toLowerCase().includes(f)
+            );
+        }
+        return [...r].sort((a, b) => {
+            let va = a[sortCol], vb = b[sortCol];
+            if (typeof va === 'string')
+                { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+            return (va < vb ? -1 : va > vb ? 1 : 0)
+                * (sortAsc ? 1 : -1);
+        });
+    }, [data, sortCol, sortAsc, filter]);
+
+    const arrow = (col) =>
+        sortCol === col ? (sortAsc ? ' \\u25B2' : ' \\u25BC') : '';
+
+    // React diffs this JSX against the previous render
+    // and only updates the DOM nodes that changed
+    return <>
+        <input className="widget-filter" placeholder="Filter..."
+            value={filter}
+            onChange={e => setFilter(e.target.value)} />
+        <table className="widget-table">
+            <thead><tr>
+                {['language','year','paradigm'].map(col =>
+                    <th key={col} onClick={() => handleSort(col)}>
+                        {col.charAt(0).toUpperCase()+col.slice(1)}
+                        {arrow(col)}
+                    </th>
+                )}
+            </tr></thead>
+            <tbody>
+                {rows.map(row =>
+                    <tr key={row.language}>
+                        <td>{row.language}</td>
+                        <td>{row.year}</td>
+                        <td>{row.paradigm}</td>
+                    </tr>
+                )}
+            </tbody>
+        </table>
+    </>;
+}`;
+
+    document.getElementById('vanilla-code-display').textContent = vanillaCode;
+    document.getElementById('react-code-display').textContent = reactCode;
+
+    document.getElementById('vanilla-toggle-code').addEventListener('click', function() {
+        const reveal = document.getElementById('vanilla-code-reveal');
+        reveal.classList.toggle('open');
+        this.textContent = reveal.classList.contains('open') ? 'Hide code' : 'Show code';
+    });
+
+    document.getElementById('react-toggle-code').addEventListener('click', function() {
+        const reveal = document.getElementById('react-code-reveal');
+        reveal.classList.toggle('open');
+        this.textContent = reveal.classList.contains('open') ? 'Hide code' : 'Show code';
+    });
+});
+</script>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- React Widget -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script type="text/babel">
+(function() {
+    const LANGUAGES = [
+        { language: 'Go',      year: 2009, paradigm: 'Imperative' },
+        { language: 'Rust',    year: 2010, paradigm: 'Multi-paradigm' },
+        { language: 'Odin',    year: 2016, paradigm: 'Imperative' },
+        { language: 'Jai',     year: 2014, paradigm: 'Imperative' },
+        { language: 'Python',  year: 1991, paradigm: 'Multi-paradigm' },
+        { language: 'Haskell', year: 1990, paradigm: 'Functional' },
+        { language: 'Scala',   year: 2004, paradigm: 'Multi-paradigm' },
+        { language: 'Ruby',    year: 1995, paradigm: 'OO' },
+        { language: 'C',       year: 1972, paradigm: 'Imperative' },
+        { language: 'Zig',     year: 2016, paradigm: 'Imperative' },
+    ];
+
+    // MutationObserver to count real DOM mutations
+    let reactDomMutations = 0;
+    const reactCounterEl = document.getElementById('react-dom-count');
+    const reactContainer = document.getElementById('react-widget');
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+            if (m.type === 'childList') {
+                reactDomMutations += m.addedNodes.length + m.removedNodes.length;
+            } else if (m.type === 'attributes' || m.type === 'characterData') {
+                reactDomMutations++;
+            }
+        });
+        reactCounterEl.textContent = reactDomMutations;
+    });
+
+    observer.observe(reactContainer, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true,
+    });
+
+    // Expose for rapid fire
+    window.getReactDomOps = () => reactDomMutations;
+    window.resetReactDomOps = () => { reactDomMutations = 0; reactCounterEl.textContent = '0'; };
+
+    // Store ref to trigger external sort/filter
+    let externalSetSort = null;
+    let externalSetFilter = null;
+
+    function LanguageTable({ data }) {
+        const [sortCol, setSortCol] = React.useState('language');
+        const [sortAsc, setSortAsc] = React.useState(true);
+        const [filter, setFilter] = React.useState('');
+
+        // Expose setters for rapid fire
+        React.useEffect(() => {
+            externalSetSort = (col) => {
+                setSortCol(prev => {
+                    if (prev === col) {
+                        setSortAsc(a => !a);
+                        return prev;
+                    }
+                    setSortAsc(true);
+                    return col;
+                });
+            };
+            externalSetFilter = (val) => setFilter(val);
+        }, []);
+
+        const handleSort = (col) => {
+            if (sortCol === col) setSortAsc(!sortAsc);
+            else { setSortCol(col); setSortAsc(true); }
+        };
+
+        const rows = React.useMemo(() => {
+            let r = data;
+            if (filter) {
+                const f = filter.toLowerCase();
+                r = r.filter(row =>
+                    row.language.toLowerCase().includes(f) ||
+                    String(row.year).includes(f) ||
+                    row.paradigm.toLowerCase().includes(f)
+                );
+            }
+            return [...r].sort((a, b) => {
+                let va = a[sortCol], vb = b[sortCol];
+                if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+                return (va < vb ? -1 : va > vb ? 1 : 0) * (sortAsc ? 1 : -1);
+            });
+        }, [data, sortCol, sortAsc, filter]);
+
+        const arrow = (col) =>
+            sortCol === col ? (sortAsc ? ' \u25B2' : ' \u25BC') : '';
+
+        return <>
+            <input className="widget-filter" placeholder="Filter..."
+                value={filter}
+                onChange={e => setFilter(e.target.value)} />
+            <table className="widget-table">
+                <thead><tr>
+                    {['language','year','paradigm'].map(col =>
+                        <th key={col} onClick={() => handleSort(col)}>
+                            {col.charAt(0).toUpperCase()+col.slice(1)}
+                            {arrow(col)}
+                        </th>
+                    )}
+                </tr></thead>
+                <tbody>
+                    {rows.map(row =>
+                        <tr key={row.language}>
+                            <td>{row.language}</td>
+                            <td>{row.year}</td>
+                            <td>{row.paradigm}</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </>;
+    }
+
+    const root = ReactDOM.createRoot(reactContainer);
+    root.render(<LanguageTable data={LANGUAGES} />);
+
+    // Expose for rapid fire
+    window.reactSetSort = (col) => { if (externalSetSort) externalSetSort(col); };
+    window.reactSetFilter = (val) => {
+        if (externalSetFilter) externalSetFilter(val);
+        // Also update the input visually (React controls it via state, so this works through setFilter)
+    };
+
+    // ── Rapid Fire ─────────────────────────────────────────────
+
+    const rapidFireBtn = document.getElementById('rapid-fire-btn');
+    const rapidFireStatus = document.getElementById('rapid-fire-status');
+
+    const RAPID_FIRE_SEQUENCE = [
+        { action: 'sort', col: 'year',     label: 'Sort by year' },
+        { action: 'filter', val: 'imp',    label: 'Filter "imp"' },
+        { action: 'sort', col: 'language', label: 'Sort by language' },
+        { action: 'filter', val: '',       label: 'Clear filter' },
+        { action: 'sort', col: 'paradigm', label: 'Sort by paradigm' },
+        { action: 'filter', val: 'multi',  label: 'Filter "multi"' },
+        { action: 'sort', col: 'year',     label: 'Sort by year' },
+        { action: 'sort', col: 'year',     label: 'Sort by year (desc)' },
+        { action: 'filter', val: '',       label: 'Clear filter' },
+        { action: 'sort', col: 'language', label: 'Sort by language' },
+        { action: 'filter', val: 'go',     label: 'Filter "go"' },
+        { action: 'filter', val: '',       label: 'Clear filter' },
+        { action: 'sort', col: 'paradigm', label: 'Sort by paradigm' },
+        { action: 'filter', val: 'func',   label: 'Filter "func"' },
+        { action: 'filter', val: '',       label: 'Clear filter' },
+        { action: 'sort', col: 'year',     label: 'Sort by year' },
+        { action: 'sort', col: 'language', label: 'Sort by language' },
+        { action: 'filter', val: '20',     label: 'Filter "20"' },
+        { action: 'filter', val: '',       label: 'Clear filter' },
+        { action: 'sort', col: 'paradigm', label: 'Sort by paradigm' },
+    ];
+
+    rapidFireBtn.addEventListener('click', async () => {
+        rapidFireBtn.disabled = true;
+        window.resetVanillaDomOps();
+        window.resetReactDomOps();
+
+        for (let i = 0; i < RAPID_FIRE_SEQUENCE.length; i++) {
+            const step = RAPID_FIRE_SEQUENCE[i];
+            rapidFireStatus.textContent = `Step ${i+1}/20: ${step.label}`;
+
+            if (step.action === 'sort') {
+                window.vanillaSetSort(step.col);
+                window.reactSetSort(step.col);
+            } else {
+                window.vanillaSetFilter(step.val);
+                window.reactSetFilter(step.val);
+            }
+
+            // Small delay so each step is visible and React can flush
+            await new Promise(r => setTimeout(r, 80));
+        }
+
+        const vanillaOps = window.getVanillaDomOps();
+        const reactOps = window.getReactDomOps();
+        rapidFireStatus.textContent =
+            `Done. Vanilla JS: ${vanillaOps} DOM operations. React: ${reactOps} DOM mutations. ` +
+            `(${Math.round(vanillaOps / Math.max(reactOps, 1))}x difference)`;
+        rapidFireBtn.disabled = false;
+    });
+})();
+</script>
+
+</body>
+</html>
