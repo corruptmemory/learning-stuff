@@ -432,6 +432,341 @@
             from { opacity: 0; transform: translateY(4px); }
             to   { opacity: 1; transform: translateY(0); }
         }
+
+        /* ── Sandbox 3: Hooks & Render Cycle ──────────────────────── */
+
+        .pipeline {
+            display: flex;
+            gap: 0;
+            align-items: stretch;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+        }
+
+        .pipeline-stage {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.6rem 0.5rem;
+            text-align: center;
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-surface);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pipeline-stage:not(:last-child)::after {
+            content: "→";
+            position: absolute;
+            right: -14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--color-text-muted);
+            z-index: 1;
+        }
+
+        .pipeline-stage:not(:last-child) {
+            margin-right: 20px;
+        }
+
+        .pipeline-stage.active {
+            border-color: var(--color-accent);
+            background: var(--color-accent-light);
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .pipeline-stage.done {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .pipeline-stage-num {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--color-text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .pipeline-stage-name {
+            display: block;
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .pipeline-stage-desc {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--color-text-muted);
+            line-height: 1.3;
+        }
+
+        .pipeline-controls {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .pipeline-btn {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 2px solid var(--color-accent);
+            border-radius: 6px;
+            background: var(--color-accent-light);
+            color: var(--color-accent);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .pipeline-btn:hover {
+            background: var(--color-accent);
+            color: white;
+        }
+
+        .pipeline-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hooks-viz {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .hooks-viz {
+                grid-template-columns: 1fr;
+            }
+            .pipeline {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .pipeline-stage:not(:last-child)::after {
+                content: "↓";
+                right: 50%;
+                top: auto;
+                bottom: -16px;
+                transform: translateX(50%);
+            }
+            .pipeline-stage:not(:last-child) {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+        }
+
+        .hooks-panel {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .hooks-panel-header {
+            padding: 0.6rem 1rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: white;
+            background: #7c3aed;
+        }
+
+        .hooks-panel-body {
+            padding: 1rem;
+        }
+
+        .hooks-array {
+            display: flex;
+            gap: 0;
+            margin: 0.75rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .hooks-array-bracket {
+            padding: 0.4rem 0.3rem;
+            font-weight: 700;
+            color: var(--color-text-muted);
+        }
+
+        .hooks-array-cell {
+            padding: 0.4rem 0.75rem;
+            border: 2px solid var(--color-border);
+            background: var(--color-surface);
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .hooks-array-cell.highlight {
+            border-color: #7c3aed;
+            background: #f5f3ff;
+        }
+
+        .hooks-array-cell.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .hooks-array-index {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0.1rem;
+        }
+
+        .hooks-array-value {
+            font-weight: 700;
+        }
+
+        .hooks-array-label {
+            display: block;
+            font-size: 0.65rem;
+            color: #7c3aed;
+            margin-top: 0.1rem;
+        }
+
+        .hooks-btn {
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hooks-btn:hover {
+            background: var(--color-accent-light);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+        .hooks-btn.danger {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .hooks-btn.danger:hover {
+            background: #fef2f2;
+        }
+
+        .hooks-render-flash {
+            animation: hooks-flash 0.5s ease;
+        }
+
+        @keyframes hooks-flash {
+            0%, 100% { background: var(--color-surface); }
+            50% { background: #fef9c3; }
+        }
+
+        .effect-timeline {
+            margin: 1rem 0;
+        }
+
+        .effect-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .effect-row:last-child {
+            border-bottom: none;
+        }
+
+        .effect-code {
+            flex: 1;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            background: #1a1a2e;
+            color: #a0a0c0;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            line-height: 1.5;
+            white-space: pre;
+        }
+
+        .effect-when {
+            flex: 1;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            padding-top: 0.3rem;
+        }
+
+        .effect-log {
+            background: #1a1a2e;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #a0a0c0;
+            max-height: 12rem;
+            overflow-y: auto;
+            margin: 0.75rem 0;
+        }
+
+        .effect-log-entry {
+            opacity: 0;
+            animation: vdom-log-fade-in 0.3s forwards;
+        }
+
+        .effect-log-entry.mount    { color: #34d399; }
+        .effect-log-entry.unmount  { color: #f87171; }
+        .effect-log-entry.effect   { color: #60a5fa; }
+        .effect-log-entry.render   { color: #fbbf24; }
+        .effect-log-entry.cleanup  { color: #fb923c; }
+
+        .stale-closure-log {
+            background: #1a1a2e;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #a0a0c0;
+            max-height: 10rem;
+            overflow-y: auto;
+            margin: 0.75rem 0;
+        }
+
+        .stale-closure-log .stale  { color: #f87171; }
+        .stale-closure-log .fresh  { color: #34d399; }
+        .stale-closure-log .info   { color: #60a5fa; }
+
+        .stale-counter-display {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+        }
+
+        .s3-subsection {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .s3-subsection h3 {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -598,7 +933,222 @@
             With keys, React sees the move and does one DOM operation instead of $N$.
         </div>
     </section>
-    <!-- Sandbox 3: Hooks internals will go here -->
+    <div class="connection">
+        You've seen the virtual DOM and reconciliation. Now: what triggers a re-render, and what happens inside the component when it runs?
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 3: useState, useEffect, and the Render Cycle -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox3">
+        <h2>Sandbox 3: useState, useEffect, and the Render Cycle</h2>
+        <div class="description">
+            <p>
+                A React component is a function. Every time state changes, React calls that function again.
+                There is no object, no instance variable, no <code>this.state</code>. Hooks like
+                <code>useState</code> and <code>useEffect</code> are how a plain function gets memory
+                and side effects. The "magic" is an array.
+            </p>
+        </div>
+
+        <!-- ── 1. Render Pipeline Timeline ──────────────────────── -->
+        <h3>The Render Pipeline</h3>
+        <p style="font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.75rem;">
+            When you call <code>setState</code>, five things happen in sequence. Click the button to watch.
+        </p>
+
+        <div class="pipeline" id="s3-pipeline">
+            <div class="pipeline-stage" data-stage="0">
+                <span class="pipeline-stage-num">1</span>
+                <span class="pipeline-stage-name">setState</span>
+                <span class="pipeline-stage-desc">Something changed</span>
+            </div>
+            <div class="pipeline-stage" data-stage="1">
+                <span class="pipeline-stage-num">2</span>
+                <span class="pipeline-stage-name">Render</span>
+                <span class="pipeline-stage-desc">Call component function, build new VDOM</span>
+            </div>
+            <div class="pipeline-stage" data-stage="2">
+                <span class="pipeline-stage-num">3</span>
+                <span class="pipeline-stage-name">Reconcile</span>
+                <span class="pipeline-stage-desc">Diff old vs new virtual DOM</span>
+            </div>
+            <div class="pipeline-stage" data-stage="3">
+                <span class="pipeline-stage-num">4</span>
+                <span class="pipeline-stage-name">Commit</span>
+                <span class="pipeline-stage-desc">Apply minimal DOM mutations</span>
+            </div>
+            <div class="pipeline-stage" data-stage="4">
+                <span class="pipeline-stage-num">5</span>
+                <span class="pipeline-stage-name">Effects</span>
+                <span class="pipeline-stage-desc">useEffect callbacks fire (after paint)</span>
+            </div>
+        </div>
+
+        <div class="pipeline-controls">
+            <button class="pipeline-btn" id="s3-trigger-pipeline">Trigger setState</button>
+        </div>
+
+        <!-- ── 2. useState Deep Dive ────────────────────────────── -->
+        <div class="s3-subsection">
+            <h3>useState: It's Just an Array</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+                React maintains a hidden array of hook values for each component. <code>useState(0)</code>
+                reads from index 0. A second <code>useState("hello")</code> reads from index 1. The index
+                is determined by <em>call order</em> — which is why hooks can never be called conditionally.
+            </p>
+
+            <div class="hooks-viz">
+                <!-- Normal hooks panel -->
+                <div class="hooks-panel">
+                    <div class="hooks-panel-header">Component: Counter</div>
+                    <div class="hooks-panel-body" id="s3-hooks-normal">
+                        <div style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+                            React's internal hooks array for this component:
+                        </div>
+                        <div class="hooks-array" id="s3-hooks-array">
+                            <span class="hooks-array-bracket">[</span>
+                            <div class="hooks-array-cell highlight" id="s3-hook-cell-0">
+                                <span class="hooks-array-index">[0]</span>
+                                <span class="hooks-array-value" id="s3-hook-val-0">0</span>
+                                <span class="hooks-array-label">count</span>
+                            </div>
+                            <div class="hooks-array-cell" id="s3-hook-cell-1">
+                                <span class="hooks-array-index">[1]</span>
+                                <span class="hooks-array-value" id="s3-hook-val-1">"hello"</span>
+                                <span class="hooks-array-label">greeting</span>
+                            </div>
+                            <span class="hooks-array-bracket">]</span>
+                        </div>
+                        <div style="margin-top: 0.75rem;">
+                            <button class="hooks-btn" id="s3-increment-btn">Increment count</button>
+                            <button class="hooks-btn" id="s3-change-greeting-btn">Change greeting</button>
+                        </div>
+                        <div style="font-family: var(--font-mono); font-size: 0.8rem; margin-top: 0.5rem; color: var(--color-text-muted);" id="s3-render-count">
+                            Render #1
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Broken hooks panel -->
+                <div class="hooks-panel">
+                    <div class="hooks-panel-header" style="background: #ef4444;">Broken: Conditional Hook</div>
+                    <div class="hooks-panel-body" id="s3-hooks-broken">
+                        <div style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+                            What if <code>useState</code> is called inside an <code>if</code>?
+                        </div>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; background: #1a1a2e; color: #a0a0c0; padding: 0.5rem 0.75rem; border-radius: 4px; margin-bottom: 0.75rem; line-height: 1.5;">
+<span style="color: #f87171;">// BROKEN — never do this</span>
+<br>const [count, setCount] = useState(0);
+<br><span style="color: #f87171;">if (count > 0) {</span>
+<br>&nbsp;&nbsp;<span style="color: #f87171;">const [name] = useState("Ada");</span>
+<br><span style="color: #f87171;">}</span>
+<br>const [greeting] = useState("hello");
+                        </div>
+                        <div class="hooks-array" id="s3-hooks-broken-array">
+                            <span class="hooks-array-bracket">[</span>
+                            <div class="hooks-array-cell" id="s3-broken-cell-0">
+                                <span class="hooks-array-index">[0]</span>
+                                <span class="hooks-array-value">0</span>
+                                <span class="hooks-array-label">count</span>
+                            </div>
+                            <div class="hooks-array-cell" id="s3-broken-cell-1">
+                                <span class="hooks-array-index">[1]</span>
+                                <span class="hooks-array-value">"hello"</span>
+                                <span class="hooks-array-label">greeting</span>
+                            </div>
+                            <span class="hooks-array-bracket">]</span>
+                        </div>
+                        <div style="margin-top: 0.75rem;">
+                            <button class="hooks-btn danger" id="s3-broken-increment">Increment (triggers bug)</button>
+                            <button class="hooks-btn" id="s3-broken-reset" style="color: var(--color-text-muted);">Reset</button>
+                        </div>
+                        <div style="font-size: 0.8rem; margin-top: 0.5rem; min-height: 2.4em;" id="s3-broken-status">
+                            count = 0, so the conditional hook is skipped. Array is [0, "hello"].
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── 3. useEffect Deep Dive ───────────────────────────── -->
+        <div class="s3-subsection">
+            <h3>useEffect: Side Effects After Paint</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+                Effects run <em>after</em> the browser paints. They're for things that don't belong in the
+                render itself: fetching data, subscribing to events, setting timers. The dependency array
+                controls <em>when</em> they re-run.
+            </p>
+
+            <div class="effect-timeline">
+                <div class="effect-row">
+                    <div class="effect-code">useEffect(() => {
+  // runs once
+}, [])</div>
+                    <div class="effect-when">
+                        <strong>Mount only.</strong> Empty deps = run once after first paint. The setup function for a
+                        subscription, a fetch, a DOM measurement.
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <div class="effect-code">useEffect(() => {
+  // runs when count changes
+}, [count])</div>
+                    <div class="effect-when">
+                        <strong>On dependency change.</strong> Runs after first paint, then again whenever
+                        <code>count</code> changes. React compares deps with <code>Object.is()</code>.
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <div class="effect-code">useEffect(() => {
+  subscribe();
+  return () => unsubscribe();
+}, [])</div>
+                    <div class="effect-when">
+                        <strong>Cleanup on unmount.</strong> The returned function runs when the component
+                        is removed from the DOM. Prevents memory leaks.
+                    </div>
+                </div>
+            </div>
+
+            <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                Toggle the "Timer" component on and off. Watch mount/unmount effects fire in the log.
+            </p>
+
+            <div style="margin-bottom: 0.5rem;">
+                <button class="hooks-btn" id="s3-toggle-timer">Mount Timer Component</button>
+                <button class="hooks-btn" id="s3-increment-effect">Increment count (triggers deps effect)</button>
+                <button class="hooks-btn" id="s3-clear-effect-log" style="color: var(--color-text-muted);">Clear log</button>
+            </div>
+
+            <div class="effect-log" id="s3-effect-log">
+                <div style="color: #606080; font-style: italic;">Click "Mount Timer Component" to begin.</div>
+            </div>
+        </div>
+
+        <!-- ── 4. Stale Closure Gotcha ──────────────────────────── -->
+        <div class="s3-subsection">
+            <h3>The Stale Closure Gotcha</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+                Every render is a function call. Every function call creates a closure. That closure
+                captures the state values <em>as they were during that render</em>. If you stash a
+                function (like a <code>setTimeout</code> callback), it holds onto the old values forever.
+            </p>
+            <p style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+                <strong>Try it:</strong> Click "Capture in setTimeout", then rapidly increment the counter
+                5 times. After 3 seconds, the timeout fires — and logs the <em>old</em> value.
+            </p>
+
+            <div id="s3-stale-closure-root"></div>
+        </div>
+
+        <div class="readout">
+            React components are just functions. Every render is a function call with a snapshot of the
+            current state. <code>useState</code> is an array index. <code>useEffect</code> is a callback
+            that runs after paint. The "magic" is bookkeeping — React tracks which component is rendering,
+            which hook index you're on, and which effects need to run. There is no magic.
+        </div>
+    </section>
     <!-- Sandbox 4: Decision framework will go here -->
     <!-- Sandbox 5: Rosetta Stone will go here -->
 
@@ -1555,6 +2105,318 @@ function renderTable() {
 
     // Initial draw
     drawCurrent();
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Sandbox 3: Render Pipeline, Hooks, Stale Closures -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    'use strict';
+
+    // ── 1. Render Pipeline Animation ─────────────────────────────
+
+    const pipelineStages = document.querySelectorAll('#s3-pipeline .pipeline-stage');
+    const pipelineBtn = document.getElementById('s3-trigger-pipeline');
+
+    async function animatePipeline() {
+        pipelineBtn.disabled = true;
+
+        // Reset all stages
+        pipelineStages.forEach(s => s.classList.remove('active', 'done'));
+
+        for (let i = 0; i < pipelineStages.length; i++) {
+            pipelineStages[i].classList.add('active');
+            await new Promise(r => setTimeout(r, 600));
+            pipelineStages[i].classList.remove('active');
+            pipelineStages[i].classList.add('done');
+        }
+
+        // Hold done state briefly, then reset
+        await new Promise(r => setTimeout(r, 1000));
+        pipelineStages.forEach(s => s.classList.remove('done'));
+        pipelineBtn.disabled = false;
+    }
+
+    pipelineBtn.addEventListener('click', animatePipeline);
+
+    // ── 2. useState Visualization ────────────────────────────────
+
+    let hookCount = 0;
+    let hookGreeting = 'hello';
+    let hookRenderNum = 1;
+
+    const hookVal0 = document.getElementById('s3-hook-val-0');
+    const hookVal1 = document.getElementById('s3-hook-val-1');
+    const hookCell0 = document.getElementById('s3-hook-cell-0');
+    const hookCell1 = document.getElementById('s3-hook-cell-1');
+    const renderCountEl = document.getElementById('s3-render-count');
+    const hooksPanel = document.getElementById('s3-hooks-normal');
+
+    function flashElement(el) {
+        el.classList.remove('hooks-render-flash');
+        void el.offsetWidth; // force reflow
+        el.classList.add('hooks-render-flash');
+    }
+
+    document.getElementById('s3-increment-btn').addEventListener('click', () => {
+        hookCount++;
+        hookRenderNum++;
+        hookVal0.textContent = hookCount;
+        hookCell0.classList.add('highlight');
+        hookCell1.classList.remove('highlight');
+        renderCountEl.textContent = `Render #${hookRenderNum}`;
+        flashElement(hooksPanel);
+    });
+
+    const greetings = ['hello', 'world', 'React', 'hooks!'];
+    document.getElementById('s3-change-greeting-btn').addEventListener('click', () => {
+        const idx = (greetings.indexOf(hookGreeting) + 1) % greetings.length;
+        hookGreeting = greetings[idx];
+        hookRenderNum++;
+        hookVal1.textContent = `"${hookGreeting}"`;
+        hookCell1.classList.add('highlight');
+        hookCell0.classList.remove('highlight');
+        renderCountEl.textContent = `Render #${hookRenderNum}`;
+        flashElement(hooksPanel);
+    });
+
+    // ── Broken conditional hooks demo ────────────────────────────
+
+    let brokenCount = 0;
+    const brokenStatus = document.getElementById('s3-broken-status');
+    const brokenArray = document.getElementById('s3-hooks-broken-array');
+    const brokenCell0 = document.getElementById('s3-broken-cell-0');
+    const brokenCell1 = document.getElementById('s3-broken-cell-1');
+
+    function renderBrokenHooks() {
+        if (brokenCount === 0) {
+            // count=0: conditional hook skipped, array is [0, "hello"]
+            brokenArray.innerHTML = `
+                <span class="hooks-array-bracket">[</span>
+                <div class="hooks-array-cell">
+                    <span class="hooks-array-index">[0]</span>
+                    <span class="hooks-array-value">0</span>
+                    <span class="hooks-array-label">count</span>
+                </div>
+                <div class="hooks-array-cell">
+                    <span class="hooks-array-index">[1]</span>
+                    <span class="hooks-array-value">"hello"</span>
+                    <span class="hooks-array-label">greeting</span>
+                </div>
+                <span class="hooks-array-bracket">]</span>`;
+            brokenStatus.innerHTML = 'count = 0, so the conditional hook is skipped. Array is [0, "hello"].';
+            brokenStatus.style.color = '';
+        } else if (brokenCount === 1) {
+            // count=1: conditional hook NOW runs, "Ada" inserted at index 1
+            // greeting reads index 2 — but there IS no index 2 on first render after the change
+            brokenArray.innerHTML = `
+                <span class="hooks-array-bracket">[</span>
+                <div class="hooks-array-cell">
+                    <span class="hooks-array-index">[0]</span>
+                    <span class="hooks-array-value">1</span>
+                    <span class="hooks-array-label">count</span>
+                </div>
+                <div class="hooks-array-cell error">
+                    <span class="hooks-array-index">[1]</span>
+                    <span class="hooks-array-value">"hello"</span>
+                    <span class="hooks-array-label">name ← WRONG</span>
+                </div>
+                <div class="hooks-array-cell error">
+                    <span class="hooks-array-index">[2]</span>
+                    <span class="hooks-array-value">???</span>
+                    <span class="hooks-array-label">greeting ← GONE</span>
+                </div>
+                <span class="hooks-array-bracket">]</span>`;
+            brokenStatus.innerHTML =
+                '<strong style="color: #ef4444;">Bug!</strong> count > 0, so the conditional hook runs. ' +
+                'Now <code>name</code> reads index 1 (gets "hello" — that was greeting!), and ' +
+                '<code>greeting</code> reads index 2 which doesn\'t exist. The indices shifted.';
+            brokenStatus.style.color = '#ef4444';
+        } else {
+            brokenArray.innerHTML = `
+                <span class="hooks-array-bracket">[</span>
+                <div class="hooks-array-cell">
+                    <span class="hooks-array-index">[0]</span>
+                    <span class="hooks-array-value">${brokenCount}</span>
+                    <span class="hooks-array-label">count</span>
+                </div>
+                <div class="hooks-array-cell error">
+                    <span class="hooks-array-index">[1]</span>
+                    <span class="hooks-array-value">"hello"</span>
+                    <span class="hooks-array-label">name ← WRONG</span>
+                </div>
+                <div class="hooks-array-cell error">
+                    <span class="hooks-array-index">[2]</span>
+                    <span class="hooks-array-value">???</span>
+                    <span class="hooks-array-label">greeting ← GONE</span>
+                </div>
+                <span class="hooks-array-bracket">]</span>`;
+            brokenStatus.innerHTML =
+                '<strong style="color: #ef4444;">Still broken.</strong> Every render with count > 0 has the wrong ' +
+                'values at the wrong indices. This is why React enforces: hooks must always be called in the same order.';
+            brokenStatus.style.color = '#ef4444';
+        }
+    }
+
+    document.getElementById('s3-broken-increment').addEventListener('click', () => {
+        brokenCount++;
+        renderBrokenHooks();
+    });
+
+    document.getElementById('s3-broken-reset').addEventListener('click', () => {
+        brokenCount = 0;
+        renderBrokenHooks();
+    });
+
+    // ── 3. useEffect Interactive Demo ────────────────────────────
+
+    const effectLog = document.getElementById('s3-effect-log');
+    const toggleTimerBtn = document.getElementById('s3-toggle-timer');
+    const incrementEffectBtn = document.getElementById('s3-increment-effect');
+    let timerMounted = false;
+    let effectCount = 0;
+    let effectLogEntries = [];
+    let timerInterval = null;
+
+    function addEffectLog(text, cls) {
+        if (effectLogEntries.length === 0) {
+            effectLog.innerHTML = '';
+        }
+        const entry = document.createElement('div');
+        entry.className = `effect-log-entry ${cls}`;
+        const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        entry.textContent = `[${ts}] ${text}`;
+        entry.style.animationDelay = '0s';
+        effectLog.appendChild(entry);
+        effectLog.scrollTop = effectLog.scrollHeight;
+        effectLogEntries.push(entry);
+    }
+
+    toggleTimerBtn.addEventListener('click', () => {
+        if (!timerMounted) {
+            timerMounted = true;
+            toggleTimerBtn.textContent = 'Unmount Timer Component';
+            effectCount = 0;
+
+            addEffectLog('Component rendered (mount)', 'render');
+            addEffectLog('useEffect([], mount): Timer started — ticking every 2s', 'mount');
+            addEffectLog('useEffect([count]): count is 0', 'effect');
+
+            timerInterval = setInterval(() => {
+                addEffectLog('⏱ Timer tick (from mount effect)', 'mount');
+            }, 2000);
+        } else {
+            timerMounted = false;
+            toggleTimerBtn.textContent = 'Mount Timer Component';
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            addEffectLog('useEffect cleanup([count]): cleaning up count=' + effectCount + ' effect', 'cleanup');
+            addEffectLog('useEffect cleanup([], unmount): Timer stopped', 'unmount');
+            addEffectLog('Component unmounted', 'unmount');
+        }
+    });
+
+    incrementEffectBtn.addEventListener('click', () => {
+        if (!timerMounted) {
+            addEffectLog('(Component not mounted — nothing happens)', 'render');
+            return;
+        }
+        const oldCount = effectCount;
+        effectCount++;
+        addEffectLog(`setState: count ${oldCount} → ${effectCount}`, 'render');
+        addEffectLog('Component re-rendered', 'render');
+        addEffectLog(`useEffect cleanup([count]): cleaning up count=${oldCount} effect`, 'cleanup');
+        addEffectLog(`useEffect([count]): count is ${effectCount}`, 'effect');
+    });
+
+    document.getElementById('s3-clear-effect-log').addEventListener('click', () => {
+        effectLog.innerHTML = '<div style="color: #606080; font-style: italic;">Log cleared.</div>';
+        effectLogEntries = [];
+    });
+})();
+</script>
+
+<!-- Sandbox 3: Stale Closure (React component) -->
+<script type="text/babel">
+(function() {
+    const { useState, useRef } = React;
+
+    function StaleClosureDemo() {
+        const [count, setCount] = useState(0);
+        const [log, setLog] = useState([]);
+        const countRef = useRef(count);
+        countRef.current = count;
+
+        function handleCapture() {
+            const capturedCount = count;
+            setLog(prev => [...prev, { text: `setTimeout scheduled — captured count = ${capturedCount}`, cls: 'info' }]);
+
+            setTimeout(() => {
+                setLog(prev => [
+                    ...prev,
+                    { text: `setTimeout fired — captured count = ${capturedCount} (stale!)`, cls: 'stale' },
+                    { text: `Actual current count = ${countRef.current}`, cls: 'fresh' },
+                ]);
+            }, 3000);
+        }
+
+        function handleIncrement() {
+            setCount(c => c + 1);
+        }
+
+        function handleReset() {
+            setCount(0);
+            setLog([]);
+        }
+
+        return (
+            <div>
+                <div className="stale-counter-display">
+                    count = {count}
+                </div>
+                <div style={{ marginBottom: '0.5rem' }}>
+                    <button className="hooks-btn" onClick={handleCapture}>
+                        Capture in setTimeout (3s delay)
+                    </button>
+                    <button className="hooks-btn" onClick={handleIncrement}>
+                        Increment
+                    </button>
+                    <button className="hooks-btn" onClick={handleReset} style={{ color: 'var(--color-text-muted)' }}>
+                        Reset
+                    </button>
+                </div>
+                <div className="stale-closure-log">
+                    {log.length === 0 ? (
+                        <div style={{ color: '#606080', fontStyle: 'italic' }}>
+                            Click "Capture in setTimeout", then increment rapidly. Watch what happens after 3 seconds.
+                        </div>
+                    ) : (
+                        log.map((entry, i) => (
+                            <div key={i} className={`effect-log-entry ${entry.cls}`} style={{ animationDelay: '0s' }}>
+                                {entry.text}
+                            </div>
+                        ))
+                    )}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+                    <strong>Why?</strong> The <code>handleCapture</code> closure captured <code>count</code> from
+                    the render when you clicked. That value is baked into the closure. Later renders create
+                    new closures with new values, but the old <code>setTimeout</code> still holds the old one.
+                    The fix: use a ref (<code>useRef</code>) to always read the latest value.
+                </div>
+            </div>
+        );
+    }
+
+    const container = document.getElementById('s3-stale-closure-root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<StaleClosureDemo />);
 })();
 </script>
 
