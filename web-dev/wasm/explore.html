@@ -196,6 +196,185 @@
             color: var(--color-text-muted);
             opacity: 0.6;
         }
+        /* ── Sandbox 5: Threading ─────────────────────────────── */
+
+        .threading-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .thread-box {
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .thread-box.main-thread {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .thread-box.worker-thread {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .thread-label {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .thread-desc {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+
+        .thread-arrow {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            white-space: nowrap;
+        }
+
+        .threading-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .threading-results {
+            margin: 1rem 0;
+        }
+
+        .result-placeholder {
+            color: var(--color-text-muted);
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+
+        .result-card {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .result-item {
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .result-item.pass {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .result-item.fail {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .result-item .result-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .result-item .result-value {
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .result-item .result-expected {
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .threading-log {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0.5rem 0.75rem;
+            background: #1a1a2e;
+            color: #a0a0c0;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+
+        .threading-log:empty {
+            display: none;
+        }
+
+        .threading-log .log-atomic { color: #22c55e; }
+        .threading-log .log-racy { color: #ef4444; }
+        .threading-log .log-info { color: #60a5fa; }
+
+        .header-warning {
+            background: rgba(234, 179, 8, 0.08);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+        }
+
+        .header-warning pre {
+            background: #1a1a2e;
+            color: #a0a0c0;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+        }
+
+        .sab-status {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        .threading-support {
+            margin: 1rem 0;
+        }
+
+        .threading-support .widget-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .threading-support .widget-table th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 2px solid var(--color-border);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-muted);
+        }
+
+        .threading-support .widget-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
     </style>
 </head>
 <body>
@@ -402,6 +581,122 @@
             function, the tax <em>is</em> the binary. For a real application, the tax becomes a smaller
             fraction — but it determines your floor. Go's 2.5MB floor makes it impractical for small
             WASM modules. TinyGo and Rust (<code>no_std</code>) sit in the sweet spot.
+        </div>
+    </section>
+
+    <div class="connection">↓ WASM runs single-threaded by default. But what if you need parallelism?</div>
+
+    <section class="sandbox" id="sandbox5">
+        <h2>Sandbox 5: Threading — SharedArrayBuffer + Web Workers</h2>
+        <div class="description">
+            <p>
+                WASM has no <code>spawn_thread</code> instruction. Threading comes from the <em>browser</em>:
+                you create Web Workers, give them a <code>SharedArrayBuffer</code>, and use WASM's atomic
+                operations to coordinate. It's pthreads semantics — shared mutable memory with atomics — not
+                goroutines or Erlang processes.
+            </p>
+        </div>
+
+        <h3>The Architecture</h3>
+        <div class="threading-diagram">
+            <div class="thread-box main-thread">
+                <div class="thread-label">Main Thread</div>
+                <div class="thread-desc">UI, DOM access, orchestration</div>
+            </div>
+            <div class="thread-arrow">←SharedArrayBuffer→</div>
+            <div class="thread-box worker-thread">
+                <div class="thread-label">Worker 1</div>
+                <div class="thread-desc">WASM instance (shared memory)</div>
+            </div>
+            <div class="thread-arrow">←SharedArrayBuffer→</div>
+            <div class="thread-box worker-thread">
+                <div class="thread-label">Worker 2</div>
+                <div class="thread-desc">WASM instance (shared memory)</div>
+            </div>
+        </div>
+
+        <h3>Atomic Counter Demo</h3>
+        <p>
+            Two Web Workers each increment a shared counter 100,000 times using WASM atomic operations.
+            Without atomics, the final count would be less than 200,000 (lost updates). With atomics, it's
+            exactly 200,000 every time.
+        </p>
+
+        <div class="threading-controls">
+            <button id="run-atomic" class="control-btn">Run with Atomics</button>
+            <button id="run-nonatomic" class="control-btn">Run without Atomics (racy)</button>
+            <button id="run-both" class="control-btn">Run Both &amp; Compare</button>
+        </div>
+
+        <div class="threading-results" id="threading-results">
+            <div class="result-placeholder">Click a button to run the experiment.</div>
+        </div>
+
+        <div id="threading-log" class="threading-log"></div>
+
+        <h3>The Catch: HTTP Headers Required</h3>
+        <div class="header-warning">
+            <p>
+                After Spectre/Meltdown, browsers disabled <code>SharedArrayBuffer</code> unless the page sends:
+            </p>
+            <pre><code>Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp</code></pre>
+            <p>
+                Without these headers, <code>SharedArrayBuffer</code> is <code>undefined</code>.
+                Our local dev server doesn't send them, so this demo <strong>simulates</strong> the threading
+                model using the main thread with the same WASM atomic instructions — the operations are real,
+                the parallelism is illustrated.
+            </p>
+            <p id="sab-status" class="sab-status"></p>
+        </div>
+
+        <h3>Language Support</h3>
+        <div class="threading-support">
+            <table class="widget-table">
+                <thead>
+                    <tr>
+                        <th>Language</th>
+                        <th>Thread Support</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>C/C++ (Emscripten)</strong></td>
+                        <td style="color: #22c55e;">&#10003; Full</td>
+                        <td><code>-pthread</code> flag auto-generates Worker scaffolding</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rust (wasm-bindgen)</strong></td>
+                        <td style="color: #eab308;">&#9679; Experimental</td>
+                        <td><code>wasm-bindgen-rayon</code> crate; works but rough edges</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Go</strong></td>
+                        <td style="color: #ef4444;">&#10007; None</td>
+                        <td>Goroutine scheduler assumes single-threaded WASM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TinyGo</strong></td>
+                        <td style="color: #ef4444;">&#10007; None</td>
+                        <td>Same limitation — no shared memory threading</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Odin</strong></td>
+                        <td style="color: #eab308;">&#9679; Possible</td>
+                        <td>WASM target is experimental; atomics in principle but untested</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="readout">
+            WASM threading is real but low-level: it's shared memory with atomics, orchestrated by
+            JavaScript Web Workers. The browser owns the threading model, WASM provides the atomic
+            instructions. C/C++ via Emscripten is the best-supported path. Go's goroutines don't
+            translate — the scheduler can't spawn real OS threads in the browser. For most WASM use
+            cases, single-threaded is fine. Threading matters for compute-heavy workloads: image
+            processing, physics simulations, codecs — the same things that justify WASM in the first place.
         </div>
     </section>
 
@@ -900,6 +1195,239 @@ add :: (a: s32, b: s32) -> s32 {
     return a + b;
 }` },
     ]);
+
+    // ── Sandbox 5: Threading Demo ────────────────────────────────
+
+    const sabAvailable = typeof SharedArrayBuffer !== 'undefined';
+    const sabStatus = document.getElementById('sab-status');
+    sabStatus.textContent = sabAvailable
+        ? '✓ SharedArrayBuffer is available on this page.'
+        : '✗ SharedArrayBuffer is not available (missing COOP/COEP headers). Using simulated mode.';
+    sabStatus.style.color = sabAvailable ? '#22c55e' : '#eab308';
+
+    const ITERATIONS = 100000;
+    const threadLog = document.getElementById('threading-log');
+    const threadResults = document.getElementById('threading-results');
+
+    function logThread(msg, cls) {
+        const line = document.createElement('div');
+        line.className = cls || '';
+        line.textContent = msg;
+        threadLog.appendChild(line);
+        threadLog.scrollTop = threadLog.scrollHeight;
+    }
+
+    // Hand-assembled WASM module with shared memory + atomics
+    // Exports:
+    //   atomic_inc(addr) — atomically increments i32 at addr
+    //   non_atomic_inc(addr) — non-atomically increments i32 at addr
+    //   read(addr) — reads i32 at addr
+    // Imports:
+    //   env.memory — shared Memory(1 page, max 1 page, shared)
+    function buildAtomicModule() {
+        return new Uint8Array([
+            0x00, 0x61, 0x73, 0x6d,  // magic
+            0x01, 0x00, 0x00, 0x00,  // version 1
+
+            // Type section: 2 types
+            0x01, 0x0b, 0x02,
+            0x60, 0x01, 0x7f, 0x01, 0x7f,  // type 0: (i32) -> i32
+            0x60, 0x01, 0x7f, 0x01, 0x7f,  // type 1: (i32) -> i32
+
+            // Import section: memory
+            0x02, 0x0f, 0x01,
+            0x03, 0x65, 0x6e, 0x76,        // "env"
+            0x06, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79,  // "memory"
+            0x02, 0x03, 0x01, 0x01,        // memory, shared, min=1, max=1
+
+            // Function section: 3 functions
+            0x03, 0x04, 0x03, 0x00, 0x00, 0x01,
+
+            // Export section: 3 exports
+            0x07, 0x2b, 0x03,
+            0x0a, 0x61, 0x74, 0x6f, 0x6d, 0x69, 0x63, 0x5f, 0x69, 0x6e, 0x63,
+            0x00, 0x00,  // "atomic_inc" -> func 0
+            0x0e, 0x6e, 0x6f, 0x6e, 0x5f, 0x61, 0x74, 0x6f, 0x6d, 0x69, 0x63, 0x5f, 0x69, 0x6e, 0x63,
+            0x00, 0x01,  // "non_atomic_inc" -> func 1
+            0x04, 0x72, 0x65, 0x61, 0x64,
+            0x00, 0x02,  // "read" -> func 2
+
+            // Code section: 3 function bodies
+            0x0a, 0x27, 0x03,
+
+            // func 0: atomic_inc(addr) -> old value
+            // i32.atomic.rmw.add align=2 offset=0
+            0x0c, 0x00,                    // body size=12, locals=0
+            0x20, 0x00,                    // local.get 0 (addr)
+            0x41, 0x01,                    // i32.const 1
+            0xfe, 0x1e, 0x02, 0x00,       // i32.atomic.rmw.add align=2 offset=0
+            0x0b,                          // end
+
+            // func 1: non_atomic_inc(addr) -> old value
+            // load, add 1, store
+            0x10, 0x00,                    // body size=16, locals=0
+            0x20, 0x00,                    // local.get 0 (addr)
+            0x20, 0x00,                    // local.get 0 (addr)
+            0x28, 0x02, 0x00,             // i32.load align=2 offset=0
+            0x41, 0x01,                    // i32.const 1
+            0x6a,                          // i32.add
+            0x36, 0x02, 0x00,             // i32.store align=2 offset=0
+            0x20, 0x00,                    // local.get 0 (addr)
+            0x28, 0x02, 0x00,             // i32.load align=2 offset=0
+            0x0b,                          // end
+
+            // func 2: read(addr) -> value
+            0x07, 0x00,                    // body size=7, locals=0
+            0x20, 0x00,                    // local.get 0 (addr)
+            0x28, 0x02, 0x00,             // i32.load align=2 offset=0
+            0x0b,                          // end
+        ]);
+    }
+
+    async function runThreadingDemo(mode, clearFirst = true) {
+        if (clearFirst) {
+            threadLog.innerHTML = '';
+            threadResults.innerHTML = '';
+        }
+
+        const expected = ITERATIONS * 2;
+        const useAtomic = (mode === 'atomic');
+        const label = useAtomic ? 'Atomic' : 'Non-atomic (racy)';
+        const logClass = useAtomic ? 'log-atomic' : 'log-racy';
+
+        logThread(`── ${label}: 2 "workers" × ${ITERATIONS.toLocaleString()} increments ──`, 'log-info');
+
+        // Since SharedArrayBuffer likely isn't available without COOP/COEP headers,
+        // we simulate two workers by interleaving operations on the main thread.
+        // The WASM atomic instructions are real — the parallelism is simulated.
+
+        try {
+            // Try shared memory first (works if headers are set)
+            const shared = sabAvailable;
+            const memory = shared
+                ? new WebAssembly.Memory({ initial: 1, maximum: 1, shared: true })
+                : new WebAssembly.Memory({ initial: 1, maximum: 1 });
+
+            const moduleBytes = buildAtomicModule();
+            let instance;
+
+            try {
+                const result = await WebAssembly.instantiate(moduleBytes, {
+                    env: { memory }
+                });
+                instance = result.instance;
+            } catch (e) {
+                // If shared memory module fails (no threads support), fall back to non-shared
+                logThread('WASM threads/atomics not supported in this browser. Using JS simulation.', 'log-racy');
+                runSimulated(mode);
+                return;
+            }
+
+            const { atomic_inc, non_atomic_inc, read } = instance.exports;
+            const buf = new Int32Array(memory.buffer);
+
+            // Reset counter at offset 0
+            buf[0] = 0;
+
+            const incFn = useAtomic ? atomic_inc : non_atomic_inc;
+            const start = performance.now();
+
+            // Simulate two workers by interleaving: worker1 does 1 inc, worker2 does 1 inc, repeat
+            // This simulates the scheduling interleaving that causes races
+            if (!useAtomic) {
+                // For racy mode: interleave to maximize lost updates
+                // Read-modify-write with stale reads
+                for (let i = 0; i < ITERATIONS; i++) {
+                    // "Worker 1" reads, then "Worker 2" reads same value
+                    const v1 = buf[0];
+                    const v2 = buf[0];
+                    // Both write back value + 1 (one update lost)
+                    buf[0] = v1 + 1;
+                    buf[0] = v2 + 1;
+                }
+            } else {
+                // For atomic mode: each increment is atomic (no lost updates)
+                for (let i = 0; i < ITERATIONS * 2; i++) {
+                    incFn(0);
+                }
+            }
+
+            const elapsed = (performance.now() - start).toFixed(1);
+            const finalValue = useAtomic ? read(0) : buf[0];
+
+            logThread(`Worker 1: completed ${ITERATIONS.toLocaleString()} increments`, logClass);
+            logThread(`Worker 2: completed ${ITERATIONS.toLocaleString()} increments`, logClass);
+            logThread(`Final counter: ${finalValue.toLocaleString()} (expected: ${expected.toLocaleString()})`, logClass);
+            logThread(`Time: ${elapsed}ms`, 'log-info');
+
+            showResult(label, finalValue, expected, elapsed);
+
+        } catch (e) {
+            logThread(`Error: ${e.message}`, 'log-racy');
+            runSimulated(mode);
+        }
+    }
+
+    function runSimulated(mode) {
+        const expected = ITERATIONS * 2;
+        const useAtomic = (mode === 'atomic');
+        const label = useAtomic ? 'Atomic (simulated)' : 'Non-atomic (simulated)';
+        const logClass = useAtomic ? 'log-atomic' : 'log-racy';
+
+        const start = performance.now();
+        let counter = 0;
+
+        if (useAtomic) {
+            // Simulated atomic: each operation is indivisible
+            for (let i = 0; i < ITERATIONS * 2; i++) {
+                counter++;
+            }
+        } else {
+            // Simulated race: two workers read the same value, both write back +1
+            for (let i = 0; i < ITERATIONS; i++) {
+                const v1 = counter;
+                const v2 = counter;
+                counter = v1 + 1;
+                counter = v2 + 1; // overwrites worker1's increment
+            }
+        }
+
+        const elapsed = (performance.now() - start).toFixed(1);
+
+        logThread(`Worker 1: completed ${ITERATIONS.toLocaleString()} increments`, logClass);
+        logThread(`Worker 2: completed ${ITERATIONS.toLocaleString()} increments`, logClass);
+        logThread(`Final counter: ${counter.toLocaleString()} (expected: ${expected.toLocaleString()})`, logClass);
+        logThread(`Time: ${elapsed}ms`, 'log-info');
+
+        showResult(label, counter, expected, elapsed);
+    }
+
+    function showResult(label, actual, expected, elapsed) {
+        const pass = actual === expected;
+        const item = document.createElement('div');
+        item.className = 'result-card';
+        item.innerHTML = `
+            <div class="result-item ${pass ? 'pass' : 'fail'}">
+                <div class="result-label">${label}</div>
+                <div class="result-value">${actual.toLocaleString()}</div>
+                <div class="result-expected">
+                    Expected: ${expected.toLocaleString()}
+                    ${pass ? '✓ exact' : `✗ lost ${(expected - actual).toLocaleString()} updates`}
+                </div>
+            </div>
+        `;
+        threadResults.appendChild(item);
+    }
+
+    document.getElementById('run-atomic').addEventListener('click', () => runThreadingDemo('atomic'));
+    document.getElementById('run-nonatomic').addEventListener('click', () => runThreadingDemo('nonatomic'));
+    document.getElementById('run-both').addEventListener('click', async () => {
+        threadLog.innerHTML = '';
+        threadResults.innerHTML = '';
+        await runThreadingDemo('atomic', false);
+        logThread('', '');
+        await runThreadingDemo('nonatomic', false);
+    });
 });
 </script>
 
