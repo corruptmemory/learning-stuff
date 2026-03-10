@@ -580,6 +580,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ── Sandbox 2: shared state between demos ─────────────────
+    let storeValue = 42;
+
     // ── Sandbox 2a: Import demo ───────────────────────────────
 
     const controls2a = document.getElementById('controls2a');
@@ -595,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         log: (val) => { loggedValue = val; }
                     }
                 });
-                exports.greet(42);
+                exports.greet(storeValue);
                 result2a.className = 'result-display success';
                 result2a.textContent = `log() was called with: ${loggedValue}`;
             } catch (e) {
@@ -623,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const controls2b = document.getElementById('controls2b');
     const memoryDisplay = document.getElementById('memory-display');
-    let storeValue = 42;
     let memExports = null;
 
     createSlider(controls2b, {
