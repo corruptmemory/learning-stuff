@@ -8,6 +8,8 @@ VENDOR_DIR="$REPO_ROOT/shared/vendor"
 PLOTLY_VERSION="2.35.3"
 KATEX_VERSION="0.16.11"
 D3_VERSION="7.9.0"
+REACT_VERSION="18"
+BABEL_STANDALONE_VERSION="7"
 
 usage() {
     cat <<'EOF'
@@ -40,6 +42,18 @@ refresh_vendor() {
     echo "  D3 $D3_VERSION..."
     curl -sL "https://cdn.jsdelivr.net/npm/d3@${D3_VERSION}/dist/d3.min.js" \
         -o "$VENDOR_DIR/d3.min.js"
+
+    # React
+    echo "  React $REACT_VERSION..."
+    curl -sL "https://unpkg.com/react@${REACT_VERSION}/umd/react.development.js" \
+        -o "$VENDOR_DIR/react.development.js"
+    curl -sL "https://unpkg.com/react-dom@${REACT_VERSION}/umd/react-dom.development.js" \
+        -o "$VENDOR_DIR/react-dom.development.js"
+
+    # Babel standalone (in-browser JSX transform)
+    echo "  Babel standalone $BABEL_STANDALONE_VERSION..."
+    curl -sL "https://unpkg.com/@babel/standalone@${BABEL_STANDALONE_VERSION}/babel.min.js" \
+        -o "$VENDOR_DIR/babel.min.js"
 
     # KaTeX core
     echo "  KaTeX $KATEX_VERSION..."
