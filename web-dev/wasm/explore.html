@@ -302,6 +302,7 @@
                     <div class="memory-byte">00</div>
                     <div class="memory-byte">00</div>
                 </div>
+                <div id="memory-annotation" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.35rem;">bytes shown in hex (little-endian i32)</div>
             </div>
         </div>
 
@@ -645,6 +646,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     byteEls[i].textContent = bytes[i].toString(16).padStart(2, '0');
                     byteEls[i].className = 'memory-byte' + (bytes[i] !== 0 ? ' written' : '');
                 }
+                document.getElementById('memory-annotation').textContent =
+                    `decimal ${storeValue} = hex 0x${storeValue.toString(16)} — stored as ${Array.from(bytes).map(b => '0x' + b.toString(16).padStart(2,'0')).join(' ')} (little-endian i32)`;
             } catch (e) {
                 console.error(e);
             }
