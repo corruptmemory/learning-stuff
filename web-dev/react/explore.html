@@ -221,6 +221,217 @@
             margin-top: 0.5rem;
             min-height: 1.2em;
         }
+
+        /* ── Sandbox 2: Virtual DOM ──────────────────────────────── */
+
+        .vdom-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .vdom-btn {
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .vdom-btn:hover {
+            background: var(--color-accent-light);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+        .vdom-btn-reset {
+            margin-left: auto;
+            color: var(--color-text-muted);
+        }
+
+        .vdom-key-toggle {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .vdom-key-toggle.visible {
+            display: flex;
+        }
+
+        .vdom-toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .vdom-toggle-hint {
+            color: #92400e;
+            font-size: 0.8rem;
+        }
+
+        .vdom-trees {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .vdom-trees {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .vdom-tree-panel {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .vdom-tree-label {
+            padding: 0.5rem 1rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-text-muted);
+            background: var(--color-bg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .vdom-svg {
+            width: 100%;
+            min-height: 220px;
+            display: block;
+            background: var(--color-surface);
+        }
+
+        .vdom-node rect {
+            stroke-width: 2;
+            rx: 4;
+            ry: 4;
+            transition: fill 0.3s, stroke 0.3s;
+        }
+
+        .vdom-node text {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+
+        .vdom-edge {
+            stroke: var(--color-border);
+            stroke-width: 1.5;
+            transition: stroke 0.3s;
+        }
+
+        /* Diff color states */
+        .vdom-node.unchanged rect { fill: #f0fdf4; stroke: #22c55e; }
+        .vdom-node.updated rect   { fill: #fef9c3; stroke: #eab308; }
+        .vdom-node.removed rect   { fill: #fef2f2; stroke: #ef4444; }
+        .vdom-node.added rect     { fill: #eff6ff; stroke: #3b82f6; }
+        .vdom-node.moved rect     { fill: #f5f3ff; stroke: #8b5cf6; }
+
+        .vdom-node.removed text   { text-decoration: line-through; }
+
+        .vdom-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .vdom-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .vdom-stat {
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+        }
+
+        .vdom-stat-label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .vdom-stat-value {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+
+        .vdom-log-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .vdom-log-label {
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .vdom-log {
+            background: #1a1a2e;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #a0a0c0;
+            max-height: 10rem;
+            overflow-y: auto;
+        }
+
+        .vdom-log-placeholder {
+            color: #606080;
+            font-style: italic;
+        }
+
+        .vdom-log-entry {
+            opacity: 0;
+            animation: vdom-log-fade-in 0.3s forwards;
+        }
+
+        .vdom-log-entry.op-update { color: #fbbf24; }
+        .vdom-log-entry.op-add    { color: #60a5fa; }
+        .vdom-log-entry.op-remove { color: #f87171; }
+        .vdom-log-entry.op-move   { color: #a78bfa; }
+
+        @keyframes vdom-log-fade-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -306,7 +517,87 @@
         Now you've seen what React does differently. But how does this "virtual DOM diffing" actually work?
     </div>
 
-    <!-- Sandbox 2: Virtual DOM will go here -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 2: The Virtual DOM — What's Actually Happening -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox2">
+        <h2>Sandbox 2: The Virtual DOM — What's Actually Happening</h2>
+        <div class="description">
+            <p>
+                React builds a tree of plain JavaScript objects — the virtual DOM — that mirrors
+                the real DOM. When state changes, React builds a <em>new</em> tree, walks both
+                trees top-down, and computes the minimal set of DOM mutations. This is the
+                reconciliation algorithm. Watch it work.
+            </p>
+        </div>
+
+        <!-- Controls -->
+        <div class="vdom-controls">
+            <button class="vdom-btn" data-action="change-text">Change text</button>
+            <button class="vdom-btn" data-action="add-item">Add item</button>
+            <button class="vdom-btn" data-action="remove-item">Remove item</button>
+            <button class="vdom-btn" data-action="reorder">Reorder</button>
+            <button class="vdom-btn vdom-btn-reset" data-action="reset">Reset</button>
+        </div>
+
+        <!-- Key toggle (only visible after reorder) -->
+        <div class="vdom-key-toggle" id="vdom-key-toggle">
+            <label class="vdom-toggle-label">
+                <input type="checkbox" id="vdom-use-keys" checked>
+                <span class="vdom-toggle-text">Use keys</span>
+            </label>
+            <span class="vdom-toggle-hint" id="vdom-key-hint"></span>
+        </div>
+
+        <!-- Trees -->
+        <div class="vdom-trees">
+            <div class="vdom-tree-panel">
+                <div class="vdom-tree-label">Current Virtual DOM</div>
+                <svg id="vdom-current-svg" class="vdom-svg"></svg>
+            </div>
+            <div class="vdom-tree-panel">
+                <div class="vdom-tree-label">Next Virtual DOM</div>
+                <svg id="vdom-next-svg" class="vdom-svg"></svg>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="vdom-stats" id="vdom-stats">
+            <div class="vdom-stat">
+                <span class="vdom-stat-label">Nodes in tree</span>
+                <span class="vdom-stat-value" id="vdom-stat-total">—</span>
+            </div>
+            <div class="vdom-stat">
+                <span class="vdom-stat-label">Nodes compared</span>
+                <span class="vdom-stat-value" id="vdom-stat-compared">—</span>
+            </div>
+            <div class="vdom-stat">
+                <span class="vdom-stat-label">DOM mutations needed</span>
+                <span class="vdom-stat-value" id="vdom-stat-mutations">—</span>
+            </div>
+            <div class="vdom-stat">
+                <span class="vdom-stat-label">Naive replace-all would do</span>
+                <span class="vdom-stat-value" id="vdom-stat-naive">—</span>
+            </div>
+        </div>
+
+        <!-- Operation log -->
+        <div class="vdom-log-container">
+            <div class="vdom-log-label">DOM operations</div>
+            <div class="vdom-log" id="vdom-log">
+                <div class="vdom-log-placeholder">Click a button above to see reconciliation in action.</div>
+            </div>
+        </div>
+
+        <div class="readout">
+            React's reconciliation is $O(n)$ — it walks both trees top-down, comparing node by
+            node. The optimal tree diff algorithm is $O(n^3)$, which is unusable for real UIs.
+            React's heuristic: (1) different element types produce different trees — don't bother
+            diffing children, just replace. (2) The <code>key</code> prop tells React which children
+            moved vs. which were added/removed. Without keys, a reorder looks like every item changed.
+            With keys, React sees the move and does one DOM operation instead of $N$.
+        </div>
+    </section>
     <!-- Sandbox 3: Hooks internals will go here -->
     <!-- Sandbox 4: Decision framework will go here -->
     <!-- Sandbox 5: Rosetta Stone will go here -->
@@ -838,6 +1129,432 @@ function renderTable() {
             `(${Math.round(vanillaOps / Math.max(reactOps, 1))}x difference)`;
         rapidFireBtn.disabled = false;
     });
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Sandbox 2: Virtual DOM Visualization -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    'use strict';
+
+    // ── Tree data structure ──────────────────────────────────────
+
+    function makeNode(tag, text, children, key) {
+        return { tag, text: text || null, children: children || [], key: key || null };
+    }
+
+    function initialTree() {
+        return makeNode('App', null, [
+            makeNode('Header', 'Todo List', [], 'header'),
+            makeNode('Input', null, [], 'input'),
+            makeNode('List', null, [
+                makeNode('Item', 'Buy milk', [], 'item-1'),
+                makeNode('Item', 'Write code', [], 'item-2'),
+                makeNode('Item', 'Learn React', [], 'item-3'),
+                makeNode('Item', 'Take break', [], 'item-4'),
+            ], 'list'),
+        ]);
+    }
+
+    function cloneTree(node) {
+        return makeNode(node.tag, node.text, node.children.map(cloneTree), node.key);
+    }
+
+    function countNodes(node) {
+        return 1 + node.children.reduce((sum, c) => sum + countNodes(c), 0);
+    }
+
+    // ── Diff / reconciliation ────────────────────────────────────
+
+    // Returns { annotations, operations, nodesCompared }
+    // annotations: Map<nodeId, status> for both current and next trees
+    // status: 'unchanged' | 'updated' | 'removed' | 'added' | 'moved'
+    function diffTrees(current, next, useKeys) {
+        const currentAnnotations = new Map();
+        const nextAnnotations = new Map();
+        const operations = [];
+        let nodesCompared = 0;
+
+        function pathStr(path) { return path.join('.'); }
+
+        function diff(cur, nxt, path) {
+            nodesCompared++;
+            const curId = pathStr(path);
+
+            if (!cur && nxt) {
+                // Added
+                annotateAll(nxt, path, 'added', nextAnnotations);
+                operations.push({ type: 'add', desc: `Append child: <${nxt.tag}>${nxt.text ? ' "' + nxt.text + '"' : ''}</${nxt.tag}>` });
+                return;
+            }
+            if (cur && !nxt) {
+                // Removed
+                annotateAll(cur, path, 'removed', currentAnnotations);
+                operations.push({ type: 'remove', desc: `Remove child: <${cur.tag}>${cur.text ? ' "' + cur.text + '"' : ''}</${cur.tag}>` });
+                return;
+            }
+
+            if (cur.tag !== nxt.tag) {
+                // Different type — replace entirely
+                annotateAll(cur, path, 'removed', currentAnnotations);
+                annotateAll(nxt, path, 'added', nextAnnotations);
+                operations.push({ type: 'remove', desc: `Replace <${cur.tag}> with <${nxt.tag}>` });
+                return;
+            }
+
+            // Same tag — check text
+            if (cur.text !== nxt.text) {
+                currentAnnotations.set(curId, 'updated');
+                nextAnnotations.set(curId, 'updated');
+                operations.push({ type: 'update', desc: `Update text content: '${cur.text}' → '${nxt.text}'` });
+            } else {
+                currentAnnotations.set(curId, 'unchanged');
+                nextAnnotations.set(curId, 'unchanged');
+            }
+
+            // Diff children
+            diffChildren(cur.children, nxt.children, path, useKeys);
+        }
+
+        function diffChildren(curChildren, nxtChildren, parentPath, useKeys) {
+            if (useKeys && curChildren.length > 0 && curChildren[0].key) {
+                // Key-based reconciliation
+                const curByKey = new Map();
+                curChildren.forEach((c, i) => curByKey.set(c.key, { node: c, index: i }));
+
+                const nxtByKey = new Map();
+                nxtChildren.forEach((c, i) => nxtByKey.set(c.key, { node: c, index: i }));
+
+                // Check for moved / added / removed
+                const handledCurKeys = new Set();
+
+                nxtChildren.forEach((nxtChild, nxtIdx) => {
+                    const childPath = [...parentPath, nxtIdx];
+                    if (curByKey.has(nxtChild.key)) {
+                        const curEntry = curByKey.get(nxtChild.key);
+                        handledCurKeys.add(nxtChild.key);
+                        if (curEntry.index !== nxtIdx) {
+                            // Moved
+                            const curPath = [...parentPath, curEntry.index];
+                            currentAnnotations.set(pathStr(curPath), 'moved');
+                            nextAnnotations.set(pathStr(childPath), 'moved');
+                            operations.push({ type: 'move', desc: `Move <${nxtChild.tag}> key="${nxtChild.key}" from position ${curEntry.index} → ${nxtIdx}` });
+                            nodesCompared++;
+                        } else {
+                            // Same position — recurse
+                            diff(curEntry.node, nxtChild, childPath);
+                        }
+                    } else {
+                        // Added
+                        diff(null, nxtChild, childPath);
+                    }
+                });
+
+                curChildren.forEach((curChild, curIdx) => {
+                    if (!handledCurKeys.has(curChild.key)) {
+                        diff(curChild, null, [...parentPath, curIdx]);
+                    }
+                });
+            } else {
+                // Index-based reconciliation (no keys)
+                const maxLen = Math.max(curChildren.length, nxtChildren.length);
+                for (let i = 0; i < maxLen; i++) {
+                    const cur = i < curChildren.length ? curChildren[i] : null;
+                    const nxt = i < nxtChildren.length ? nxtChildren[i] : null;
+                    diff(cur, nxt, [...parentPath, i]);
+                }
+            }
+        }
+
+        function annotateAll(node, path, status, map) {
+            map.set(pathStr(path), status);
+            node.children.forEach((child, i) => {
+                annotateAll(child, [...path, i], status, map);
+            });
+        }
+
+        diff(current, next, [0]);
+
+        return { currentAnnotations, nextAnnotations, operations, nodesCompared };
+    }
+
+    // ── SVG tree layout ──────────────────────────────────────────
+
+    const NODE_W = 100;
+    const NODE_H = 28;
+    const LEVEL_H = 58;
+    const SIBLING_GAP = 12;
+
+    // Compute layout positions with a bottom-up sizing pass
+    function layoutTree(node, depth, annotations, pathPrefix) {
+        const path = pathPrefix || [0];
+        const nodeId = path.join('.');
+        const status = annotations ? annotations.get(nodeId) : null;
+
+        const label = node.text ? `${node.tag}: "${node.text}"` : node.tag;
+        // Truncate long labels
+        const displayLabel = label.length > 14 ? label.slice(0, 13) + '…' : label;
+
+        const result = {
+            tag: node.tag,
+            label: displayLabel,
+            fullLabel: label,
+            status,
+            depth,
+            children: [],
+            x: 0, y: depth * LEVEL_H + 10,
+            width: NODE_W,
+            height: NODE_H,
+        };
+
+        if (node.children.length === 0) {
+            result.subtreeWidth = NODE_W;
+        } else {
+            result.children = node.children.map((child, i) =>
+                layoutTree(child, depth + 1, annotations, [...path, i])
+            );
+            const totalChildWidth = result.children.reduce((s, c) => s + c.subtreeWidth, 0)
+                + (result.children.length - 1) * SIBLING_GAP;
+            result.subtreeWidth = Math.max(NODE_W, totalChildWidth);
+        }
+
+        return result;
+    }
+
+    function positionTree(layoutNode, xOffset) {
+        if (layoutNode.children.length === 0) {
+            layoutNode.x = xOffset + layoutNode.subtreeWidth / 2;
+        } else {
+            let cx = xOffset;
+            layoutNode.children.forEach(child => {
+                positionTree(child, cx);
+                cx += child.subtreeWidth + SIBLING_GAP;
+            });
+            // Center parent over children
+            const first = layoutNode.children[0];
+            const last = layoutNode.children[layoutNode.children.length - 1];
+            layoutNode.x = (first.x + last.x) / 2;
+        }
+    }
+
+    function getTreeBounds(layoutNode) {
+        let minX = layoutNode.x - NODE_W / 2;
+        let maxX = layoutNode.x + NODE_W / 2;
+        let maxY = layoutNode.y + NODE_H;
+        layoutNode.children.forEach(child => {
+            const cb = getTreeBounds(child);
+            minX = Math.min(minX, cb.minX);
+            maxX = Math.max(maxX, cb.maxX);
+            maxY = Math.max(maxY, cb.maxY);
+        });
+        return { minX, maxX, maxY };
+    }
+
+    function renderTreeToSVG(svgEl, layoutNode) {
+        const ns = 'http://www.w3.org/2000/svg';
+        svgEl.innerHTML = '';
+
+        positionTree(layoutNode, 0);
+        const bounds = getTreeBounds(layoutNode);
+        const pad = 15;
+        const viewW = bounds.maxX - bounds.minX + pad * 2;
+        const viewH = bounds.maxY + pad * 2;
+        svgEl.setAttribute('viewBox', `${bounds.minX - pad} ${-pad} ${viewW} ${viewH}`);
+
+        // Draw edges first (behind nodes)
+        function drawEdges(node) {
+            node.children.forEach(child => {
+                const line = document.createElementNS(ns, 'line');
+                line.setAttribute('x1', node.x);
+                line.setAttribute('y1', node.y + NODE_H);
+                line.setAttribute('x2', child.x);
+                line.setAttribute('y2', child.y);
+                line.classList.add('vdom-edge');
+                svgEl.appendChild(line);
+                drawEdges(child);
+            });
+        }
+
+        function drawNodes(node) {
+            const g = document.createElementNS(ns, 'g');
+            g.classList.add('vdom-node');
+            if (node.status) g.classList.add(node.status);
+
+            const rect = document.createElementNS(ns, 'rect');
+            rect.setAttribute('x', node.x - NODE_W / 2);
+            rect.setAttribute('y', node.y);
+            rect.setAttribute('width', NODE_W);
+            rect.setAttribute('height', NODE_H);
+            if (!node.status) {
+                rect.setAttribute('fill', 'white');
+                rect.setAttribute('stroke', '#d1d5db');
+            }
+            g.appendChild(rect);
+
+            const text = document.createElementNS(ns, 'text');
+            text.setAttribute('x', node.x);
+            text.setAttribute('y', node.y + NODE_H / 2);
+            text.textContent = node.label;
+            g.appendChild(text);
+
+            // Tooltip
+            const title = document.createElementNS(ns, 'title');
+            title.textContent = node.fullLabel + (node.status ? ` [${node.status}]` : '');
+            g.appendChild(title);
+
+            svgEl.appendChild(g);
+            node.children.forEach(drawNodes);
+        }
+
+        drawEdges(layoutNode);
+        drawNodes(layoutNode);
+    }
+
+    // ── State management ─────────────────────────────────────────
+
+    let currentTree = initialTree();
+    let useKeys = true;
+
+    const currentSvg = document.getElementById('vdom-current-svg');
+    const nextSvg = document.getElementById('vdom-next-svg');
+    const logEl = document.getElementById('vdom-log');
+    const keyToggle = document.getElementById('vdom-key-toggle');
+    const keyCheckbox = document.getElementById('vdom-use-keys');
+    const keyHint = document.getElementById('vdom-key-hint');
+
+    // Draw initial current tree (no annotations)
+    function drawCurrent() {
+        const layout = layoutTree(currentTree, 0, null, [0]);
+        renderTreeToSVG(currentSvg, layout);
+        // Clear next tree
+        nextSvg.innerHTML = '';
+    }
+
+    function showDiff(nextTree, actionName) {
+        const result = diffTrees(currentTree, nextTree, useKeys);
+
+        // Draw current with annotations
+        const curLayout = layoutTree(currentTree, 0, result.currentAnnotations, [0]);
+        renderTreeToSVG(currentSvg, curLayout);
+
+        // Draw next with annotations
+        const nxtLayout = layoutTree(nextTree, 0, result.nextAnnotations, [0]);
+        renderTreeToSVG(nextSvg, nxtLayout);
+
+        // Stats
+        const totalNodes = countNodes(nextTree);
+        document.getElementById('vdom-stat-total').textContent = totalNodes;
+        document.getElementById('vdom-stat-compared').textContent = result.nodesCompared;
+        document.getElementById('vdom-stat-mutations').textContent = result.operations.length;
+        document.getElementById('vdom-stat-naive').textContent = countNodes(currentTree) + totalNodes;
+
+        // Log
+        logEl.innerHTML = '';
+        if (result.operations.length === 0) {
+            logEl.innerHTML = '<div class="vdom-log-placeholder">No changes detected.</div>';
+        } else {
+            result.operations.forEach((op, i) => {
+                const div = document.createElement('div');
+                div.className = `vdom-log-entry op-${op.type}`;
+                div.textContent = op.desc;
+                div.style.animationDelay = `${i * 0.12}s`;
+                logEl.appendChild(div);
+            });
+        }
+
+        // Update current tree for next operation
+        currentTree = nextTree;
+    }
+
+    // ── Actions ──────────────────────────────────────────────────
+
+    const actions = {
+        'change-text'() {
+            const next = cloneTree(currentTree);
+            const list = next.children[2]; // List
+            if (list.children.length > 0) {
+                const firstItem = list.children[0];
+                if (firstItem.text === 'Buy milk') {
+                    firstItem.text = 'Buy oat milk';
+                } else if (firstItem.text === 'Buy oat milk') {
+                    firstItem.text = 'Buy almond milk';
+                } else {
+                    firstItem.text = 'Buy milk';
+                }
+            }
+            keyToggle.classList.remove('visible');
+            showDiff(next, 'change-text');
+        },
+
+        'add-item'() {
+            const next = cloneTree(currentTree);
+            const list = next.children[2];
+            const idx = list.children.length + 1;
+            list.children.push(makeNode('Item', `New item ${idx - 4}`, [], `item-${idx}`));
+            keyToggle.classList.remove('visible');
+            showDiff(next, 'add-item');
+        },
+
+        'remove-item'() {
+            const next = cloneTree(currentTree);
+            const list = next.children[2];
+            if (list.children.length > 0) {
+                list.children.pop();
+            }
+            keyToggle.classList.remove('visible');
+            showDiff(next, 'remove-item');
+        },
+
+        'reorder'() {
+            const next = cloneTree(currentTree);
+            const list = next.children[2];
+            if (list.children.length > 1) {
+                const last = list.children.pop();
+                list.children.unshift(last);
+            }
+            keyToggle.classList.add('visible');
+            keyHint.textContent = useKeys
+                ? 'With keys: React detects moves instead of treating each position as a text change.'
+                : 'Without keys: React sees every position as changed.';
+            showDiff(next, 'reorder');
+        },
+
+        'reset'() {
+            currentTree = initialTree();
+            keyToggle.classList.remove('visible');
+            drawCurrent();
+            logEl.innerHTML = '<div class="vdom-log-placeholder">Reset to initial state.</div>';
+            document.getElementById('vdom-stat-total').textContent = '—';
+            document.getElementById('vdom-stat-compared').textContent = '—';
+            document.getElementById('vdom-stat-mutations').textContent = '—';
+            document.getElementById('vdom-stat-naive').textContent = '—';
+        },
+    };
+
+    // ── Wire up controls ─────────────────────────────────────────
+
+    document.querySelectorAll('.vdom-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            if (actions[action]) actions[action]();
+        });
+    });
+
+    keyCheckbox.addEventListener('change', () => {
+        useKeys = keyCheckbox.checked;
+        keyHint.textContent = useKeys
+            ? 'With keys: React detects moves instead of treating each position as a text change.'
+            : 'Without keys: React sees every position as changed.';
+        // Re-run the reorder to show the difference
+        // Reset first, then reorder
+        currentTree = initialTree();
+        actions['reorder']();
+    });
+
+    // Initial draw
+    drawCurrent();
 })();
 </script>
 
