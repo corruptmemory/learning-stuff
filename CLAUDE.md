@@ -70,8 +70,14 @@ WASM exploration (web-dev/wasm/) with 3 pages:
 - **Decomposition** — separating delegation size from judging bias (Cremieux's key insight)
 - **Event studies** — per-period treatment effects, the standard parallel trends diagnostic
 
+React exploration (web-dev/react/) — single page:
+1. The Problem React Solves (vanilla JS vs React side-by-side filterable/sortable table)
+2. Virtual DOM reconciliation visualization (SVG tree diff, keyed vs unkeyed)
+3. Render lifecycle, hooks internals, stale closure gotcha (pipeline animation, hooks array, conditional hook bug, useEffect timing)
+4. Decision framework (comparison matrix + interactive questionnaire: React vs HTMX vs Alpine vs Svelte vs Vanilla)
+5. Rosetta Stone (same widget in 5 frameworks via tabbed code)
+
 **Planned tracks (see docs/plans/2026-03-09-new-tracks-design.md):**
-- **web-dev/react/** — ground-zero "why does this exist" exploration
 - **graphics/vulkan/** — shader mental model, pipeline architecture, Odin exercises
 - **graphics/gpu-programming/** — CUDA, compute shaders (future)
 

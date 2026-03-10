@@ -22,6 +22,7 @@ Interactive learning environment for data science, finance, and machine learning
 # Open an exploration
 # http://localhost:8080/data-science/difference-in-differences/explore.html
 # http://localhost:8080/web-dev/wasm/explore.html
+# http://localhost:8080/web-dev/react/explore.html
 ```
 
 ## Structure
