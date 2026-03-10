@@ -767,6 +767,247 @@
             margin-top: 0;
             margin-bottom: 0.75rem;
         }
+
+        /* ── Sandbox 4: Decision Framework ──────────────────────── */
+
+        .comparison-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .comparison-matrix thead th {
+            position: sticky;
+            top: 0;
+            background: var(--color-surface);
+            padding: 0.6rem 0.75rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-muted);
+            border-bottom: 2px solid var(--color-border);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .comparison-matrix thead th:first-child {
+            min-width: 110px;
+        }
+
+        .comparison-matrix tbody td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: top;
+            line-height: 1.4;
+        }
+
+        .comparison-matrix tbody tr:nth-child(even) {
+            background: var(--color-bg);
+        }
+
+        .comparison-matrix tbody tr:last-child {
+            background: var(--color-accent-light);
+            font-weight: 600;
+        }
+
+        .comparison-matrix tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-matrix tbody td:first-child {
+            font-weight: 700;
+            color: var(--color-text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+
+        /* Decision tree questionnaire */
+
+        .decision-tree {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .decision-tree-header {
+            padding: 0.6rem 1rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: white;
+            background: #7c3aed;
+        }
+
+        .decision-tree-body {
+            padding: 1.25rem;
+        }
+
+        .dt-progress {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .dt-progress-dot {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--color-border);
+            transition: background 0.3s;
+        }
+
+        .dt-progress-dot.done {
+            background: #7c3aed;
+        }
+
+        .dt-progress-dot.active {
+            background: var(--color-accent);
+        }
+
+        .dt-question {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .dt-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .dt-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-family: var(--font-body);
+            line-height: 1.4;
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .dt-option:hover {
+            border-color: var(--color-accent);
+            background: var(--color-accent-light);
+        }
+
+        .dt-option .dt-option-leans {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* Result card */
+
+        .dt-result {
+            text-align: center;
+            animation: vdom-log-fade-in 0.4s forwards;
+        }
+
+        .dt-result-pick {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .dt-result-pick.react       { background: #dbeafe; color: #1d4ed8; }
+        .dt-result-pick.htmx        { background: #dcfce7; color: #166534; }
+        .dt-result-pick.alpine      { background: #fef3c7; color: #92400e; }
+        .dt-result-pick.svelte      { background: #fce7f3; color: #9d174d; }
+        .dt-result-pick.vanilla     { background: #f3f4f6; color: #374151; }
+
+        .dt-result-explanation {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--color-text);
+            margin-bottom: 0.75rem;
+            max-width: 40rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .dt-result-honest {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            font-style: italic;
+            margin-bottom: 1rem;
+            max-width: 40rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .dt-restart-btn {
+            padding: 0.4rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-surface);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: var(--font-body);
+        }
+
+        .dt-restart-btn:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+        /* Honest verdict callout */
+
+        .verdict-callout {
+            margin: 1.5rem 0;
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .verdict-callout strong {
+            color: #92400e;
+        }
+
+        .verdict-callout em {
+            font-style: italic;
+        }
+
+        .verdict-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+
+        .sandbox-arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--color-border);
+            padding: 0.5rem 0;
+        }
     </style>
 </head>
 <body>
@@ -1149,7 +1390,146 @@
             which hook index you're on, and which effects need to run. There is no magic.
         </div>
     </section>
-    <!-- Sandbox 4: Decision framework will go here -->
+    <div class="sandbox-arrow">&#x2193;</div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 4: Should I Use This? -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox4">
+        <h2>Sandbox 4: Should I Use This?</h2>
+        <div class="description">
+            <p>
+                React solves a real problem. So do five other tools. The question isn't whether
+                React is good — it's whether it's good <em>for your situation</em>.
+            </p>
+        </div>
+
+        <!-- Comparison Matrix -->
+        <h3>The Landscape</h3>
+        <table class="comparison-matrix">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>React</th>
+                    <th>HTMX</th>
+                    <th>Alpine.js</th>
+                    <th>Vanilla JS</th>
+                    <th>Svelte</th>
+                    <th>WASM (Leptos)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mental model</td>
+                    <td>UI = f(state)</td>
+                    <td>Server-rendered HTML</td>
+                    <td>Sprinkle interactivity</td>
+                    <td>Direct DOM</td>
+                    <td>Compiler magic</td>
+                    <td>Rust components</td>
+                </tr>
+                <tr>
+                    <td>Bundle size</td>
+                    <td>~45KB</td>
+                    <td>~14KB</td>
+                    <td>~15KB</td>
+                    <td>0KB</td>
+                    <td>~2KB (compiled)</td>
+                    <td>~200KB+</td>
+                </tr>
+                <tr>
+                    <td>Build step</td>
+                    <td>Yes (usually)</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>Yes (Rust)</td>
+                </tr>
+                <tr>
+                    <td>Client state</td>
+                    <td>Excellent</td>
+                    <td>Minimal (server owns state)</td>
+                    <td>Good for small state</td>
+                    <td>Manual</td>
+                    <td>Excellent</td>
+                    <td>Excellent</td>
+                </tr>
+                <tr>
+                    <td>Server model</td>
+                    <td>Any (API-driven)</td>
+                    <td>Server-rendered HTML</td>
+                    <td>Any</td>
+                    <td>Any</td>
+                    <td>Any (API-driven)</td>
+                    <td>Any</td>
+                </tr>
+                <tr>
+                    <td>Learning curve</td>
+                    <td>Steep</td>
+                    <td>Gentle</td>
+                    <td>Gentle</td>
+                    <td>None</td>
+                    <td>Moderate</td>
+                    <td>Steep</td>
+                </tr>
+                <tr>
+                    <td>Ecosystem</td>
+                    <td>Massive</td>
+                    <td>Small</td>
+                    <td>Small</td>
+                    <td>N/A</td>
+                    <td>Growing</td>
+                    <td>Tiny</td>
+                </tr>
+                <tr>
+                    <td>Best for</td>
+                    <td>Complex SPAs</td>
+                    <td>Server-driven apps</td>
+                    <td>Enhancing static pages</td>
+                    <td>Simple interactions</td>
+                    <td>Complex SPAs</td>
+                    <td>Systems programmers</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Decision Tree -->
+        <h3>Find Your Tool</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 1rem;">
+            Answer four questions. Get an honest recommendation. Built with vanilla JS, because
+            using React for a four-question quiz would be proving the point.
+        </p>
+
+        <div class="decision-tree">
+            <div class="decision-tree-header">Decision Tree</div>
+            <div class="decision-tree-body" id="dt-body">
+                <div class="dt-progress" id="dt-progress">
+                    <div class="dt-progress-dot active"></div>
+                    <div class="dt-progress-dot"></div>
+                    <div class="dt-progress-dot"></div>
+                    <div class="dt-progress-dot"></div>
+                </div>
+                <div id="dt-content"></div>
+            </div>
+        </div>
+
+        <!-- Honest Verdict -->
+        <div class="verdict-callout">
+            <span class="verdict-label">Given your stack (Go + templ + HTMX)</span>
+            React adds a build step, a virtual DOM, and a JavaScript-heavy client to a stack
+            that already works. The only scenario where React makes sense for you is if you're
+            building something with <em>heavy</em> client-side interactivity — a code editor,
+            a real-time dashboard, a drawing tool. For most web applications, you already have
+            the better tool.
+        </div>
+
+        <div class="readout">
+            React is excellent at what it was designed for: complex, stateful, interactive UIs
+            where the server is just an API. If that's not your app, React is overhead. The
+            JavaScript ecosystem will tell you everything needs React. Most things don't.
+        </div>
+    </section>
     <!-- Sandbox 5: Rosetta Stone will go here -->
 
 </div>
@@ -2417,6 +2797,170 @@ function renderTable() {
     const container = document.getElementById('s3-stale-closure-root');
     const root = ReactDOM.createRoot(container);
     root.render(<StaleClosureDemo />);
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Sandbox 4: Decision Tree (vanilla JS — intentionally) -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    const questions = [
+        {
+            text: "How much client-side state does your app manage?",
+            options: [
+                { label: "Almost none — server has the truth", leans: "HTMX", scores: { htmx: 3, alpine: 1 } },
+                { label: "Some — form state, UI toggles", leans: "Alpine.js", scores: { alpine: 3, htmx: 1, svelte: 1 } },
+                { label: "A lot — complex interactive UI", leans: "React / Svelte", scores: { react: 3, svelte: 2 } }
+            ]
+        },
+        {
+            text: "Do you control the server?",
+            options: [
+                { label: "Yes, and I like rendering HTML there", leans: "HTMX", scores: { htmx: 3, alpine: 1 } },
+                { label: "Yes, but I want a JSON API", leans: "React", scores: { react: 3, svelte: 2 } },
+                { label: "No — static hosting / third-party API", leans: "React / Svelte", scores: { react: 2, svelte: 3, vanilla: 1 } }
+            ]
+        },
+        {
+            text: "How big is your team?",
+            options: [
+                { label: "Just me", leans: "simpler tools", scores: { htmx: 2, alpine: 2, vanilla: 2, svelte: 1 } },
+                { label: "2\u20135 developers", leans: "any is fine", scores: { react: 1, svelte: 1, htmx: 1, alpine: 1 } },
+                { label: "Large team / hiring from the job market", leans: "React (hiring pool)", scores: { react: 3 } }
+            ]
+        },
+        {
+            text: "What\u2019s your tolerance for build tooling?",
+            options: [
+                { label: "None — I want to open an HTML file and go", leans: "HTMX / Alpine", scores: { htmx: 3, alpine: 3, vanilla: 2 } },
+                { label: "Minimal — I\u2019ll accept a simple bundler", leans: "Svelte", scores: { svelte: 3, alpine: 1 } },
+                { label: "Whatever it takes — I\u2019m used to it", leans: "React", scores: { react: 3, svelte: 1 } }
+            ]
+        }
+    ];
+
+    const frameworks = {
+        react:   { name: "React",      css: "react",   tagline: "Complex, stateful SPAs with large teams and established tooling." },
+        htmx:    { name: "HTMX",       css: "htmx",    tagline: "Server-driven apps where the server renders HTML and the client stays thin." },
+        alpine:  { name: "Alpine.js",  css: "alpine",  tagline: "Sprinkling interactivity onto server-rendered pages without a build step." },
+        svelte:  { name: "Svelte",     css: "svelte",  tagline: "Complex UIs with minimal runtime overhead and a gentler learning curve than React." },
+        vanilla: { name: "Vanilla JS", css: "vanilla", tagline: "Simple interactions where a framework would be overhead." }
+    };
+
+    const honestCaveats = {
+        react:   "React\u2019s ecosystem is its moat, not its architecture. You\u2019re choosing a hiring pool and a package registry as much as a rendering strategy.",
+        htmx:    "HTMX is underrated for most web apps. The industry over-indexes on client complexity because that\u2019s where the conference talks are.",
+        alpine:  "Alpine fills the gap between \u201Cadd a click handler\u201D and \u201Cbuild a whole SPA.\u201D Most apps live in this gap.",
+        svelte:  "Svelte compiles away the framework. If you\u2019re starting fresh and don\u2019t need React\u2019s ecosystem, it\u2019s arguably the better tool.",
+        vanilla: "Vanilla JS is underrated. If you can describe your interactivity in a sentence, you don\u2019t need a framework."
+    };
+
+    let currentQ = 0;
+    const totals = { react: 0, htmx: 0, alpine: 0, svelte: 0, vanilla: 0 };
+
+    function renderQuestion() {
+        const contentEl = document.getElementById('dt-content');
+        const progressEl = document.getElementById('dt-progress');
+        if (!contentEl || !progressEl) return;
+
+        // Update progress dots
+        const dots = progressEl.children;
+        for (let i = 0; i < dots.length; i++) {
+            dots[i].className = 'dt-progress-dot' +
+                (i < currentQ ? ' done' : '') +
+                (i === currentQ ? ' active' : '');
+        }
+
+        const q = questions[currentQ];
+        let html = '<div class="dt-question">Q' + (currentQ + 1) + ': ' + q.text + '</div>';
+        html += '<div class="dt-options">';
+        q.options.forEach(function(opt, idx) {
+            html += '<button class="dt-option" data-idx="' + idx + '">' +
+                opt.label +
+                '<span class="dt-option-leans">\u2192 leans ' + opt.leans + '</span>' +
+                '</button>';
+        });
+        html += '</div>';
+        contentEl.innerHTML = html;
+
+        // Attach listeners
+        contentEl.querySelectorAll('.dt-option').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.getAttribute('data-idx'));
+                const scores = q.options[idx].scores;
+                for (const key in scores) {
+                    totals[key] = (totals[key] || 0) + scores[key];
+                }
+                currentQ++;
+                if (currentQ < questions.length) {
+                    renderQuestion();
+                } else {
+                    renderResult();
+                }
+            });
+        });
+    }
+
+    function renderResult() {
+        const contentEl = document.getElementById('dt-content');
+        const progressEl = document.getElementById('dt-progress');
+        if (!contentEl || !progressEl) return;
+
+        // All dots done
+        const dots = progressEl.children;
+        for (let i = 0; i < dots.length; i++) {
+            dots[i].className = 'dt-progress-dot done';
+        }
+
+        // Find winner
+        let best = '', bestScore = -1;
+        for (const key in totals) {
+            if (totals[key] > bestScore) {
+                bestScore = totals[key];
+                best = key;
+            }
+        }
+
+        const fw = frameworks[best];
+        const caveat = honestCaveats[best];
+
+        // Build score bar summary
+        let scoreBars = '';
+        const sorted = Object.keys(totals).sort(function(a, b) { return totals[b] - totals[a]; });
+        const maxScore = totals[sorted[0]] || 1;
+        sorted.forEach(function(key) {
+            const pct = Math.round((totals[key] / maxScore) * 100);
+            scoreBars += '<div style="display:flex;align-items:center;gap:0.5rem;margin:0.25rem 0;font-size:0.8rem;">' +
+                '<span style="width:70px;text-align:right;font-weight:600;color:var(--color-text-muted);">' + frameworks[key].name + '</span>' +
+                '<div style="flex:1;height:8px;background:var(--color-border);border-radius:4px;overflow:hidden;">' +
+                '<div style="width:' + pct + '%;height:100%;background:' + (key === best ? 'var(--color-accent)' : '#94a3b8') + ';border-radius:4px;transition:width 0.5s;"></div>' +
+                '</div>' +
+                '<span style="width:20px;font-family:var(--font-mono);font-size:0.75rem;color:var(--color-text-muted);">' + totals[key] + '</span>' +
+                '</div>';
+        });
+
+        contentEl.innerHTML = '<div class="dt-result">' +
+            '<div class="dt-result-pick ' + fw.css + '">' + fw.name + '</div>' +
+            '<div class="dt-result-explanation">' + fw.tagline + '</div>' +
+            '<div style="max-width:20rem;margin:0 auto 1rem;">' + scoreBars + '</div>' +
+            '<div class="dt-result-honest">' + caveat + '</div>' +
+            '<button class="dt-restart-btn" id="dt-restart">Start over</button>' +
+            '</div>';
+
+        document.getElementById('dt-restart').addEventListener('click', function() {
+            currentQ = 0;
+            for (const key in totals) totals[key] = 0;
+            renderQuestion();
+        });
+    }
+
+    // Initialize on load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderQuestion);
+    } else {
+        renderQuestion();
+    }
 })();
 </script>
 
