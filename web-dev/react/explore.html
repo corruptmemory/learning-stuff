@@ -1530,7 +1530,33 @@
             JavaScript ecosystem will tell you everything needs React. Most things don't.
         </div>
     </section>
-    <!-- Sandbox 5: Rosetta Stone will go here -->
+    <div class="sandbox-arrow">&#x2193;</div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SANDBOX 5: Rosetta Stone -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <section class="sandbox" id="sandbox5">
+        <h2>Sandbox 5: Rosetta Stone</h2>
+        <div class="description">
+            <p>
+                The same widget — a filterable, sortable language table — expressed in five
+                different frameworks. Same inputs, same outputs, different philosophies.
+                Read the annotations: every framework must solve the same four problems
+                (state, rendering, events, derived data). The question is <em>where</em>
+                each solution lives and <em>who</em> orchestrates it.
+            </p>
+        </div>
+
+        <div id="rosetta-container"></div>
+
+        <div class="readout">
+            Five frameworks, one widget. React isn't wrong — it's one answer. The question
+            is whether your problem needs React's answer (complex client state, large team,
+            rich ecosystem) or a simpler one (server-rendered HTML, sprinkled interactivity).
+            For most CRUD apps, HTMX with a server-side language you already know is less
+            code, less complexity, and fewer things to break.
+        </div>
+    </section>
 
 </div>
 
@@ -2961,6 +2987,297 @@ function renderTable() {
     } else {
         renderQuestion();
     }
+})();
+</script>
+
+<!-- Sandbox 5: Rosetta Stone code tabs -->
+<script>
+(function() {
+    const container = document.getElementById('rosetta-container');
+    if (!container) return;
+
+    const vanillaJS = `// ── Filterable/Sortable Language Table — Vanilla JS ──
+
+// STATE: plain variables — you manage them
+let sortCol = 'language';
+let sortAsc = true;
+let filter = '';
+
+const data = [
+  { language: 'Go',     year: 2009, paradigm: 'Imperative' },
+  { language: 'Rust',   year: 2010, paradigm: 'Multi-paradigm' },
+  { language: 'Python', year: 1991, paradigm: 'Multi-paradigm' },
+  { language: 'C',      year: 1972, paradigm: 'Imperative' },
+];
+
+// DERIVED: manual — you compute it, you decide when
+function getFiltered() {
+  return data
+    .filter(r => r.language.toLowerCase().includes(filter))
+    .sort((a, b) => {
+      const v = a[sortCol] > b[sortCol] ? 1 : -1;
+      return sortAsc ? v : -v;
+    });
+}
+
+// RENDER: imperative DOM manipulation — you build every element
+function render() {
+  const tbody = document.querySelector('#my-table tbody');
+  tbody.innerHTML = '';              // blow away old rows
+  getFiltered().forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = \`<td>\${row.language}</td>
+                    <td>\${row.year}</td>
+                    <td>\${row.paradigm}</td>\`;
+    tbody.appendChild(tr);           // you touch the DOM directly
+  });
+}
+
+// EVENTS: manual addEventListener — you wire everything
+document.querySelector('#filter-input')
+  .addEventListener('input', e => { filter = e.target.value; render(); });
+document.querySelectorAll('#my-table th')
+  .forEach(th => th.addEventListener('click', () => {
+    sortCol = th.dataset.col;
+    sortAsc = !sortAsc;
+    render();                        // you call render explicitly
+  }));
+
+render(); // initial paint — nothing happens unless you say so`;
+
+    const reactJSX = `// ── Filterable/Sortable Language Table — React (hooks + JSX) ──
+
+function LanguageTable() {
+  const data = [
+    { language: 'Go',     year: 2009, paradigm: 'Imperative' },
+    { language: 'Rust',   year: 2010, paradigm: 'Multi-paradigm' },
+    { language: 'Python', year: 1991, paradigm: 'Multi-paradigm' },
+    { language: 'C',      year: 1972, paradigm: 'Imperative' },
+  ];
+
+  // STATE: React owns it — useState returns [value, setter]
+  const [sortCol, setSortCol] = useState('language');
+  const [sortAsc, setSortAsc]  = useState(true);
+  const [filter, setFilter]    = useState('');
+
+  // DERIVED: useMemo recomputes only when dependencies change
+  const rows = useMemo(() =>
+    data
+      .filter(r => r.language.toLowerCase().includes(filter))
+      .sort((a, b) => {
+        const v = a[sortCol] > b[sortCol] ? 1 : -1;
+        return sortAsc ? v : -v;
+      }),
+    [sortCol, sortAsc, filter]
+  );
+
+  const handleSort = (col) => {
+    setSortCol(col);
+    setSortAsc(prev => col === sortCol ? !prev : true);
+  };
+
+  // RENDER: declarative JSX — describe what the UI looks like
+  // React diffs a virtual DOM and patches the real DOM for you
+  return (
+    <div>
+      {/* EVENTS: inline handlers, React's synthetic event system */}
+      <input
+        placeholder="Filter..."
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+      />
+      <table>
+        <thead><tr>
+          <th onClick={() => handleSort('language')}>Language</th>
+          <th onClick={() => handleSort('year')}>Year</th>
+          <th onClick={() => handleSort('paradigm')}>Paradigm</th>
+        </tr></thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.language}>
+              <td>{r.language}</td>
+              <td>{r.year}</td>
+              <td>{r.paradigm}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}`;
+
+    const htmxGo = `// ── Filterable/Sortable Language Table — HTMX + Go/templ ──
+// The browser sends requests; the server returns HTML fragments.
+// No client-side state. No JavaScript framework. No build step.
+
+// ═══════ Server: Go handler ═══════════════════════════════
+
+// STATE: lives in the database (or in-memory slice) on the server
+var languages = []Language{
+    {"Go", 2009, "Imperative"},
+    {"Rust", 2010, "Multi-paradigm"},
+    {"Python", 1991, "Multi-paradigm"},
+    {"C", 1972, "Imperative"},
+}
+
+func handleTable(w http.ResponseWriter, r *http.Request) {
+    // EVENTS: arrive as plain HTTP requests (GET params)
+    filter := r.URL.Query().Get("filter")
+    sortCol := r.URL.Query().Get("sort")
+
+    // DERIVED: computed on the server, every request
+    rows := filterAndSort(languages, filter, sortCol)
+
+    // RENDER: server renders HTML, sends it back
+    components.LanguageRows(rows).Render(r.Context(), w)
+}
+
+// ═══════ Template: templ component ════════════════════════
+
+// templ LanguageRows(rows []Language) {
+//     for _, r := range rows {
+//         <tr>
+//             <td>{ r.Language }</td>
+//             <td>{ fmt.Sprint(r.Year) }</td>
+//             <td>{ r.Paradigm }</td>
+//         </tr>
+//     }
+// }
+
+// ═══════ HTML: the page ═══════════════════════════════════
+
+// <input name="filter"
+//        hx-get="/table"           <!-- EVENTS: keystroke → GET -->
+//        hx-trigger="input changed delay:300ms"
+//        hx-target="#rows"         <!-- RENDER: swap inner HTML -->
+//        hx-include="this" />
+//
+// <table>
+//   <thead><tr>
+//     <th hx-get="/table?sort=language"
+//         hx-target="#rows">Language</th>
+//     <th hx-get="/table?sort=year"
+//         hx-target="#rows">Year</th>
+//   </tr></thead>
+//   <tbody id="rows">
+//     <!-- Server-rendered rows go here -->
+//   </tbody>
+// </table>`;
+
+    const alpineJS = `<!-- Filterable/Sortable Language Table — Alpine.js -->
+<!-- No build step. No virtual DOM. Just HTML attributes. -->
+
+<!-- STATE: x-data defines reactive state right on the element -->
+<div x-data="{
+  sortCol: 'language',
+  sortAsc: true,
+  filter: '',
+  data: [
+    { language: 'Go',     year: 2009, paradigm: 'Imperative' },
+    { language: 'Rust',   year: 2010, paradigm: 'Multi-paradigm' },
+    { language: 'Python', year: 1991, paradigm: 'Multi-paradigm' },
+    { language: 'C',      year: 1972, paradigm: 'Imperative' },
+  ],
+
+  // DERIVED: getter recomputes reactively (like a computed property)
+  get rows() {
+    return this.data
+      .filter(r => r.language.toLowerCase().includes(this.filter))
+      .sort((a, b) => {
+        const v = a[this.sortCol] > b[this.sortCol] ? 1 : -1;
+        return this.sortAsc ? v : -v;
+      });
+  }
+}">
+
+  <!-- EVENTS: x-model for two-way binding, x-on:click for handlers -->
+  <input placeholder="Filter..." x-model="filter" />
+
+  <table>
+    <thead><tr>
+      <!-- EVENTS: click toggles sort — Alpine patches the DOM -->
+      <th x-on:click="sortCol = 'language'; sortAsc = !sortAsc">
+        Language
+      </th>
+      <th x-on:click="sortCol = 'year'; sortAsc = !sortAsc">
+        Year
+      </th>
+      <th x-on:click="sortCol = 'paradigm'; sortAsc = !sortAsc">
+        Paradigm
+      </th>
+    </tr></thead>
+    <tbody>
+      <!-- RENDER: x-for loops, Alpine handles DOM updates -->
+      <template x-for="r in rows" :key="r.language">
+        <tr>
+          <td x-text="r.language"></td>
+          <td x-text="r.year"></td>
+          <td x-text="r.paradigm"></td>
+        </tr>
+      </template>
+    </tbody>
+  </table>
+</div>
+
+<script src="https://unpkg.com/alpinejs" defer></script>`;
+
+    const svelte = `<!-- Filterable/Sortable Language Table — Svelte (.svelte) -->
+<!-- Compiles to vanilla JS at build time. No runtime framework. -->
+<script>
+  const data = [
+    { language: 'Go',     year: 2009, paradigm: 'Imperative' },
+    { language: 'Rust',   year: 2010, paradigm: 'Multi-paradigm' },
+    { language: 'Python', year: 1991, paradigm: 'Multi-paradigm' },
+    { language: 'C',      year: 1972, paradigm: 'Imperative' },
+  ];
+
+  // STATE: plain let bindings — Svelte's compiler makes them reactive
+  let sortCol = 'language';
+  let sortAsc = true;
+  let filter = '';
+
+  function handleSort(col) {
+    sortAsc = col === sortCol ? !sortAsc : true;
+    sortCol = col;
+  }
+
+  // DERIVED: $: marks reactive statements — recomputed when deps change
+  $: rows = data
+    .filter(r => r.language.toLowerCase().includes(filter))
+    .sort((a, b) => {
+      const v = a[sortCol] > b[sortCol] ? 1 : -1;
+      return sortAsc ? v : -v;
+    });
+</script>
+
+<!-- RENDER: enhanced HTML — looks like HTML, compiles to efficient updates -->
+<!-- EVENTS: on:click, bind:value — familiar HTML-like syntax -->
+<input placeholder="Filter..." bind:value={filter} />
+
+<table>
+  <thead><tr>
+    <th on:click={() => handleSort('language')}>Language</th>
+    <th on:click={() => handleSort('year')}>Year</th>
+    <th on:click={() => handleSort('paradigm')}>Paradigm</th>
+  </tr></thead>
+  <tbody>
+    {#each rows as r (r.language)}
+      <tr>
+        <td>{r.language}</td>
+        <td>{r.year}</td>
+        <td>{r.paradigm}</td>
+      </tr>
+    {/each}
+  </tbody>
+</table>`;
+
+    createTabbedCode(container, [
+        { label: 'Vanilla JS',  lang: 'javascript', code: vanillaJS },
+        { label: 'React',       lang: 'jsx',        code: reactJSX },
+        { label: 'HTMX + Go',   lang: 'go',         code: htmxGo },
+        { label: 'Alpine.js',   lang: 'html',       code: alpineJS },
+        { label: 'Svelte',      lang: 'html',       code: svelte },
+    ]);
 })();
 </script>
 
