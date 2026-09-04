@@ -7,7 +7,7 @@ Interactive learning environment for data science, finance, and machine learning
 - **data-science/** — statistics, probability, causal inference
 - **web-dev/** — WebAssembly, React
 - **graphics/** — Vulkan, GPU programming (planned)
-- **finance/** — market analysis, derivatives, greeks (planned)
+- **finance/** — valuation (DCF, whose number it is, fat tails, ergodicity); derivatives and greeks planned
 - **ml/** — modern machine learning (planned)
 
 ## Quick Start
@@ -23,6 +23,7 @@ Interactive learning environment for data science, finance, and machine learning
 # http://localhost:8080/data-science/difference-in-differences/explore.html
 # http://localhost:8080/web-dev/wasm/explore.html
 # http://localhost:8080/web-dev/react/explore.html
+# http://localhost:8080/finance/valuation/explore.html
 ```
 
 ## Structure
