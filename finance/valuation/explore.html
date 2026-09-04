@@ -161,9 +161,19 @@
     <!-- SANDBOX 5 -->
     <section class="sandbox" id="sandbox5">
         <h2>Sandbox 5: One Path, Not an Ensemble: The Founder's Bet</h2>
-        <div class="description"><p>Filled in Task 8.</p></div>
+        <div class="description">
+            <p>
+                Wealth starts at 1. Each period you commit a fraction $f$ to a venture that multiplies it
+                by $G$ with probability $q$ or by $B$ otherwise, and a fixed burn $c$ comes out. Below
+                $\varepsilon$ the path stops: ruin is absorbing. Two hundred founders run the same bet. The
+                ensemble mean is what a DCF computes. The median is what a founder lives.
+            </p>
+        </div>
         <div class="sandbox-content">
-            <div class="chart-container" id="chart5"></div>
+            <div>
+                <div class="chart-container" id="chart5"></div>
+                <div class="chart-container" id="chart5b" style="min-height:280px"></div>
+            </div>
             <div class="controls" id="controls5"></div>
         </div>
         <div class="readout" id="readout5"></div>
@@ -198,7 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initSandbox2();
     initSandbox3();
     initSandbox4();
-    // initSandbox5() … initSandbox6() are appended by Tasks 8–9.
+    initSandbox5();
+    // initSandbox6() is appended by Task 9.
 });
 
 // ── Formatting helpers used by every sandbox ────────────────
@@ -530,6 +541,99 @@ function renderS4Readout(est, trueMean, st) {
         <p>Notice the 5th-to-95th band barely separates the regimes. It is a robust statistic, which means it is built to ignore exactly the region the fat tail lives in. Pick a tail-blind statistic and the tail disappears from your report, not from the world. The 1-in-100 and worst-history columns are where the two regimes actually part company.</p>
         <p>Thirty periods is a typical equity-premium sample. In the fat regime the number you would have plugged into $r$ depends on which history you happened to live through, and no history contains the loss that dominates the expectation.</p>
         ${callout('take', 'Your take', 'This is the risk premium the DCF asked you to put in the exponent. A scalar premium assumes the estimator converges and that risk shaves off the same fraction every year. Under a power-law tail neither holds. The fix is not a better estimate of the premium; it is to stop hiding risk in the exponent and put it in the cash flows as explicit scenarios, with ruin as its own scenario.')}
+    `;
+    renderAllMath();
+}
+
+// ── SANDBOX 5 ───────────────────────────────────────────────
+const S5_PRESETS = {
+    peters:  { f: 1.0, q: 0.5,  G: 1.5, B: 0.6, c: 0.00, T: 60, eps: 0.05 },
+    lottery: { f: 0.3, q: 0.05, G: 20,  B: 0.7, c: 0.01, T: 60, eps: 0.05 },
+};
+
+function initSandbox5() {
+    const controls = document.getElementById('controls5');
+    const st = { ...S5_PRESETS.peters, nPaths: 200, seed: 42 };
+    const sliders = {};
+
+    const update = debounce(() => {
+        const sim = simulatePaths(st);
+        const curve = growthCurve(st);
+        drawS5(sim, curve, st);
+        renderS5Readout(sim, curve, st);
+    });
+
+    const add = (key, label, min, max, step, format) => { sliders[key] = createSlider(controls, { label, id: 's5-' + key, min, max, step, value: st[key], format, onChange: v => { st[key] = v; update(); } }); };
+    add('f', 'Fraction committed f', 0, 1, 0.02, fmtPct);
+    add('q', 'Probability of a good period q', 0, 1, 0.01, fmtPct);
+    add('G', 'Good multiplier G', 1, 30, 0.1, v => v.toFixed(1) + '×');
+    add('B', 'Bad multiplier B', 0.05, 1, 0.01, v => v.toFixed(2) + '×');
+    add('c', 'Burn per period c', 0, 0.05, 0.0025, v => (v * 100).toFixed(2) + '% of start');
+    add('T', 'Periods T', 20, 120, 5, v => v);
+    add('eps', 'Ruin barrier ε', 0.01, 0.2, 0.01, v => v.toFixed(2));
+    const row = document.createElement('div'); row.className = 'control-group';
+    const presets = document.createElement('div'); presets.className = 'preset-row';
+    for (const [name, label] of [['peters', 'Peters coin'], ['lottery', 'Lottery-shaped']]) {
+        const b = document.createElement('button'); b.textContent = label;
+        b.addEventListener('click', () => { Object.assign(st, S5_PRESETS[name]); for (const k in sliders) { sliders[k].value = st[k]; sliders[k].dispatchEvent(new Event('input')); } });
+        presets.appendChild(b);
+    }
+    row.appendChild(presets); controls.appendChild(row);
+    createButton(controls, { label: 'Reseed', onClick: () => { st.seed++; update(); } });
+
+    update();
+}
+
+// g(f) and P(ruin) on a grid of f. Analytic growth when c = 0, simulated otherwise.
+function growthCurve(st) {
+    const fs = [], g = [], ruin = [];
+    for (let f = 0; f <= 1.0001; f += 0.02) {
+        const sim = simulatePaths({ ...st, f, nPaths: 100, seed: st.seed + 17 });
+        let gf;
+        if (st.c === 0) gf = timeAverageGrowth(f, st.q, st.G, st.B);
+        else { const logs = sim.paths.map(p => Math.log(p[st.T]) / st.T).sort((a, b) => a - b); gf = logs[Math.floor(logs.length / 2)]; }
+        fs.push(f); g.push(gf); ruin.push(sim.ruinProb);
+    }
+    return { fs, g, ruin, kelly: kellyFraction(st.q, st.G, st.B) };
+}
+
+function drawS5(sim, curve, st) {
+    // All 200 paths as one trace with null gaps: far cheaper than 200 traces.
+    const xs = [], ys = [];
+    for (const p of sim.paths) { for (let t = 0; t <= st.T; t++) { xs.push(t); ys.push(p[t]); } xs.push(null); ys.push(null); }
+    const t = Array.from({ length: st.T + 1 }, (_, i) => i);
+    Plotly.react('chart5', [
+        { type: 'scatter', mode: 'lines', x: xs, y: ys, line: { color: 'rgba(100,116,139,0.18)', width: 1 }, name: 'one founder each', hoverinfo: 'skip' },
+        { type: 'scatter', mode: 'lines', x: t, y: Array.from(sim.meanPath), line: { color: '#f59e0b', width: 3 }, name: 'ensemble mean (what the DCF computes)' },
+        { type: 'scatter', mode: 'lines', x: t, y: Array.from(sim.medianPath), line: { color: '#2563eb', width: 3 }, name: 'median founder (what you live)' },
+    ], plotlyDefaults({
+        yaxis: { type: 'log', title: 'wealth (log)' }, xaxis: { title: 'period' },
+        shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: st.eps, y1: st.eps, line: { color: '#dc2626', dash: 'dash', width: 1.5 } }],
+        legend: { orientation: 'h', y: 1.12 },
+    }), { responsive: true, displayModeBar: false });
+
+    Plotly.react('chart5b', [
+        { type: 'scatter', mode: 'lines', x: curve.fs, y: curve.g, name: st.c === 0 ? 'time-average growth g(f)' : 'median growth g(f), simulated', line: { color: '#2563eb', width: 2.5 } },
+        { type: 'scatter', mode: 'lines', x: curve.fs, y: curve.ruin, name: 'P(ruin by T)', yaxis: 'y2', line: { color: '#dc2626', width: 2, dash: 'dot' } },
+        { type: 'scatter', mode: 'markers', x: [curve.kelly], y: [st.c === 0 ? timeAverageGrowth(curve.kelly, st.q, st.G, st.B) : curve.g[Math.round(curve.kelly / 0.02)]], name: `Kelly f* = ${fmtPct(curve.kelly)}${st.c ? ' (at zero burn)' : ''}`, marker: { color: '#16a34a', size: 12, symbol: 'diamond' } },
+        { type: 'scatter', mode: 'markers', x: [st.f], y: [st.c === 0 ? timeAverageGrowth(st.f, st.q, st.G, st.B) : curve.g[Math.round(st.f / 0.02)]], name: `you: f = ${fmtPct(st.f)}`, marker: { color: '#111', size: 10 } },
+    ], plotlyDefaults({
+        xaxis: { title: 'fraction committed f', tickformat: '.0%' }, yaxis: { title: 'growth per period', zeroline: true, zerolinecolor: '#999' },
+        yaxis2: { title: 'P(ruin)', overlaying: 'y', side: 'right', range: [0, 1], tickformat: '.0%' },
+        legend: { orientation: 'h', y: 1.18 }, margin: { r: 60 },
+    }), { responsive: true, displayModeBar: false });
+}
+
+function renderS5Readout(sim, curve, st) {
+    const gHere = st.c === 0 ? timeAverageGrowth(st.f, st.q, st.G, st.B) : curve.g[Math.round(st.f / 0.02)];
+    const gEns = ensembleGrowth(st.f, st.q, st.G, st.B);
+    document.getElementById('readout5').innerHTML = `
+        <p><strong>By period ${st.T}:</strong> probability of ruin <span class="estimate ${sim.ruinProb > 0.25 ? 'wrong' : 'correct'}">${fmtPct(sim.ruinProb)}</span>
+           &nbsp;·&nbsp; median founder ends at <strong>${sim.medianFinal.toFixed(3)}</strong> &nbsp;·&nbsp; ensemble mean ends at <strong>${sim.meanFinal.toFixed(3)}</strong>.</p>
+        <p><strong>Growth per period:</strong> along your path ${(gHere * 100).toFixed(2)}%${st.c ? ' (simulated, with burn)' : ''}; of the ensemble mean ${(gEns * 100).toFixed(2)}%${st.c ? ' (before burn)' : ''}.
+           Kelly fraction $f^* = $ <strong>${fmtPct(curve.kelly)}</strong>${st.c ? ' at zero burn' : ''}.</p>
+        <p>${st.c === 0 && st.f === 1 && Math.abs(st.G - 1.5) < 1e-9 && Math.abs(st.B - 0.6) < 1e-9 ? 'This is the Peters coin: +50% or −40% at even odds. The ensemble mean grows 5% per period. The typical founder shrinks 5% per period. Both statements are true, and only one of them is about you.' : 'Ensemble average equals time average only for ergodic processes. Wealth with an absorbing barrier is not one.'}</p>
+        ${callout('take', 'Your take: the decision rule', `A DCF computes the orange line. You live the blue one. So the question is not "is the expected value positive." It is three questions in order. <strong>Is the worst case survivable?</strong> Bounded loss you can absorb and still play again. <strong>Is the upside convex?</strong> Good outcomes unbounded while bad ones are capped. <strong>Is $f$ sized so your own path stays off the barrier?</strong> The diamond marks the growth-optimal fraction; most people who bet their own single path should sit to its left. A DCF is at best a subroutine inside those three questions, useful for the cash forecast and useless as the verdict.`)}
     `;
     renderAllMath();
 }
