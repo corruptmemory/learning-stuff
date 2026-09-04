@@ -300,8 +300,12 @@ function initSandbox2() {
 
     document.getElementById('s2-solve').addEventListener('click', () => {
         const price = parseFloat(document.getElementById('s2-price').value);
-        const res = impliedGrowth({ price, fcf1: base.fcf1, n: base.n, r: base.r, gT: base.gT });
         const out = document.getElementById('reverse2-out');
+        if (!Number.isFinite(price)) {
+            out.innerHTML = '<p>Enter a number. A blank or non-numeric price is not a claim the model can test.</p>';
+            return;
+        }
+        const res = impliedGrowth({ price, fcf1: base.fcf1, n: base.n, r: base.r, gT: base.gT });
         if (!res.ok) {
             out.innerHTML = `<p>No growth rate between −20% and +60% reaches ${fmtMoney(price)}. At those bounds the model gives ${fmtMoney(res.lowValue)} and ${fmtMoney(res.highValue)}. The price is outside what this forecast shape can produce; the model is not the thing to adjust.</p>`;
         } else {
