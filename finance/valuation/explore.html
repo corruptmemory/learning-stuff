@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Is This Cash Stream Worth to Me?</title>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="../../shared/vendor/katex/katex.min.css">
+    <script src="../../shared/vendor/katex/katex.min.js"></script>
+    <script src="../../shared/vendor/katex/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="../../shared/vendor/plotly.min.js"></script>
+
+    <!-- Shared styles and utilities -->
+    <link rel="stylesheet" href="../../shared/explore.css">
+    <script src="../../shared/explore.js"></script>
+
+    <!-- Pure math for this page (also runnable under Node) -->
+    <script src="valuation.js"></script>
+</head>
+<body>
+
+<div class="exploration">
+
+    <header>
+        <h1>What Is This Cash Stream Worth to Me?</h1>
+        <div class="subtitle">
+            Discounted cash flow, whose number it is, and where the arithmetic stops being honest
+        </div>
+    </header>
+
+    <section class="intro">
+        <p>
+            This page takes a position. A discounted cash flow model is not an alternative to
+            subjective value theory; it is that theory's arithmetic. The arithmetic is one line.
+            The assumptions are the entire content.
+        </p>
+        <div class="math-block">
+            $$V = \sum_{t=1}^{N} \frac{FCF_t}{(1+r)^t} + \frac{TV}{(1+r)^N}, \qquad TV = \frac{FCF_N\,(1+g_T)}{r - g_T}$$
+        </div>
+        <p>
+            Six sandboxes. The first shows what the machine computes and how much of the answer
+            lives in one term. The second shows that three parties looking at the same company get
+            three numbers, by construction. The third stacks a merger on top. The fourth shows why a
+            risk premium estimated from history is a thin-tailed assumption. The fifth shows why a
+            founder betting a single path needs a different average than the one the model
+            computes. The sixth is the code.
+        </p>
+    </section>
+
+    <details class="notation-ref">
+        <summary>Notation Reference</summary>
+        <div class="notation-content">
+            <table>
+                <thead><tr><th>Symbol</th><th>Name</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td class="notation-symbol">$FCF_t$</td><td>Free cash flow</td><td>Cash left in year $t$ after running the business and reinvesting enough to keep it running. What the owners could take out.</td></tr>
+                    <tr><td class="notation-symbol">$r$</td><td>Discount rate</td><td>The annual return you require for tying up money in something this risky. Time preference plus a risk premium. The time part is anchored to an observed price; the risk part is a judgment.</td></tr>
+                    <tr><td class="notation-symbol">$g_e$, $g_T$</td><td>Growth rates</td><td>Explicit-period growth for years $1..N$, and the perpetual growth assumed forever after. $g_T$ must stay below $r$ or the terminal value diverges.</td></tr>
+                    <tr><td class="notation-symbol">$DF_t = (1+r)^{-t}$</td><td>Discount factor</td><td>The geometric kernel. $r$ plays the role of a decay constant.</td></tr>
+                    <tr><td class="notation-symbol">$TV$</td><td>Terminal value</td><td>One lump standing in for every year after $N$. Closed form of a geometric series with ratio $(1+g_T)/(1+r)$.</td></tr>
+                    <tr><td class="notation-symbol">ZOPA</td><td>Zone of possible agreement</td><td>Prices between the seller's minimum and the highest buyer's maximum. A deal lands somewhere inside it; where is negotiation, not valuation.</td></tr>
+                    <tr><td class="notation-symbol">$S$, $p_s$, $p_c$</td><td>Merger terms</td><td>Annual run-rate synergy, probability it is realized, probability the deal closes at all.</td></tr>
+                    <tr><td class="notation-symbol">$\alpha$, $x_m$</td><td>Pareto tail</td><td>Tail exponent and scale. Mean exists only for $\alpha > 1$, variance only for $\alpha > 2$.</td></tr>
+                    <tr><td class="notation-symbol">$\bar{R}_n$</td><td>Running mean</td><td>Sample mean after $n$ draws. With finite variance its error falls like $n^{-1/2}$. For $1 < \alpha < 2$ it falls like $n^{1/\alpha - 1}$, whose exponent goes to zero as $\alpha \to 1$. At $\alpha \le 1$ there is nothing to converge to.</td></tr>
+                    <tr><td class="notation-symbol">$f$, $G$, $B$, $q$</td><td>The bet</td><td>Fraction of wealth committed; multiplier on a good period; multiplier on a bad period; probability of a good period.</td></tr>
+                    <tr><td class="notation-symbol">$g(f)$, $f^*$</td><td>Time-average growth, Kelly fraction</td><td>Growth rate of $\ln W$ along one path as a function of $f$; the $f$ that maximizes it. The ensemble mean grows at a different, higher rate that no single path experiences.</td></tr>
+                    <tr><td class="notation-symbol">$\varepsilon$, $c$</td><td>Ruin barrier, burn</td><td>Wealth level below which the path stops; fixed per-period drain on wealth. Ruin is absorbing, which is what makes the process non-ergodic.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </details>
+
+    <!-- SANDBOX 1 -->
+    <section class="sandbox" id="sandbox1">
+        <h2>Sandbox 1: The Machine</h2>
+        <div class="description"><p>Filled in Task 4.</p></div>
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart1"></div>
+            <div class="controls" id="controls1"></div>
+        </div>
+        <div class="readout" id="readout1"></div>
+    </section>
+
+    <!-- SANDBOX 2 -->
+    <section class="sandbox" id="sandbox2">
+        <h2>Sandbox 2: Whose Number Is It?</h2>
+        <div class="description"><p>Filled in Task 5.</p></div>
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart2"></div>
+            <div class="controls" id="controls2"></div>
+        </div>
+        <div class="readout" id="readout2"></div>
+    </section>
+
+    <!-- SANDBOX 3 -->
+    <section class="sandbox" id="sandbox3">
+        <h2>Sandbox 3: After the Deal</h2>
+        <div class="description"><p>Filled in Task 6.</p></div>
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart3"></div>
+            <div class="controls" id="controls3"></div>
+        </div>
+        <div class="readout" id="readout3"></div>
+    </section>
+
+    <!-- SANDBOX 4 -->
+    <section class="sandbox" id="sandbox4">
+        <h2>Sandbox 4: The Premium That Can't Be Estimated</h2>
+        <div class="description"><p>Filled in Task 7.</p></div>
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart4"></div>
+            <div class="controls" id="controls4"></div>
+        </div>
+        <div class="readout" id="readout4"></div>
+    </section>
+
+    <!-- SANDBOX 5 -->
+    <section class="sandbox" id="sandbox5">
+        <h2>Sandbox 5: One Path, Not an Ensemble: The Founder's Bet</h2>
+        <div class="description"><p>Filled in Task 8.</p></div>
+        <div class="sandbox-content">
+            <div class="chart-container" id="chart5"></div>
+            <div class="controls" id="controls5"></div>
+        </div>
+        <div class="readout" id="readout5"></div>
+    </section>
+
+    <!-- SANDBOX 6 -->
+    <section class="sandbox" id="sandbox6">
+        <h2>Sandbox 6: The Code: Python and Spreadsheet Side by Side</h2>
+        <div class="description"><p>Filled in Task 9.</p></div>
+        <div id="rosetta6"></div>
+    </section>
+
+    <section class="intro" id="references">
+        <h2>References</h2>
+        <ul>
+            <li>Nate B Jones, <em>Claude Fable 5.1: Not Just Code. It Made Me A Film, 7 Sheets And 13 Slides</em> (video, 2026). <a href="https://youtu.be/55rDzRkUVdE">youtu.be/55rDzRkUVdE</a>. The post-acquisition workbook exercise that started this page.</li>
+            <li>Eugen von Böhm-Bawerk, <em>Capital and Interest</em>; Irving Fisher, <em>The Theory of Interest</em> (1930). Time preference as the origin of interest, and present value as its arithmetic.</li>
+            <li>Alfred Rappaport and Michael Mauboussin, <em>Expectations Investing</em>. Reverse DCF: read the price, back out what it requires, judge that.</li>
+            <li>Nassim Nicholas Taleb, <em>Statistical Consequences of Fat Tails</em> (2020). Why sample means of fat-tailed variables do not settle.</li>
+            <li>Ole Peters, "The ergodicity problem in economics," <em>Nature Physics</em> 15 (2019). Ensemble average versus time average for multiplicative wealth.</li>
+            <li>J. L. Kelly Jr., "A New Interpretation of Information Rate" (1956). The growth-optimal fraction.</li>
+        </ul>
+    </section>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    runSelfTest();
+    renderAllMath();
+    // initSandbox1() … initSandbox6() are appended by Tasks 4–9.
+});
+
+// ── Formatting helpers used by every sandbox ────────────────
+const fmtMoney = v => v.toLocaleString(undefined, { maximumFractionDigits: 1 });
+const fmtPct = v => (v * 100).toFixed(1) + '%';
+const fmtPct2 = v => (v * 100).toFixed(2) + '%';
+const debounce = (fn, ms = 50) => { let h; return (...a) => { clearTimeout(h); h = setTimeout(() => fn(...a), ms); }; };
+function callout(kind, tag, html) {
+    return `<div class="callout ${kind}"><div class="callout-tag">${tag}</div>${html}</div>`;
+}
+</script>
+</body>
+</html>
