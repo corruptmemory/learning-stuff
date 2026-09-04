@@ -39,6 +39,7 @@ function dcf({ fcf1, g, n, r, gT }) {
 
 // ── Sandbox 2: reverse DCF ─────────────────────────────────────
 function impliedGrowth({ price, fcf1, n, r, gT, lo = -0.20, hi = 0.60 }) {
+    if (!Number.isFinite(price)) return { ok: false, g: null, lowValue: NaN, highValue: NaN };
     const lowValue = dcf({ fcf1, g: lo, n, r, gT }).value;
     const highValue = dcf({ fcf1, g: hi, n, r, gT }).value;
     if (price < lowValue || price > highValue) return { ok: false, g: null, lowValue, highValue };
@@ -73,7 +74,7 @@ function mergerModel(inp) {
     for (let t = 1; t <= T.n; t++) K += ramp(t) * Math.pow(1 + rC, -t);
     const pvSyn = inp.pS * inp.S * K;
     const valueCreated = VT.value + pvSyn - inp.I - fees - pricePaid;
-    const impliedSynergy = (pricePaid + inp.I + fees - VT.value) / (inp.pS * K);
+    const impliedSynergy = inp.pS * K <= 0 ? null : (pricePaid + inp.I + fees - VT.value) / (inp.pS * K);
     const acqPerShareBefore = VA.value / A.shares;
     const newShares = inp.stockShare * pricePaid / acqPerShareBefore;
     const equityAfter = VA.value + VT.value + pvSyn - inp.I - fees - (1 - inp.stockShare) * pricePaid;
@@ -116,6 +117,8 @@ function runningMean(arr) {
 // ── Sandbox 5: ergodicity ──────────────────────────────────────
 function kellyFraction(q, G, B) {
     const a = G - 1, b = 1 - B;
+    if (a <= 0) return 0;
+    if (b <= 0) return 1;
     return Math.max(0, Math.min(1, q / b - (1 - q) / a));
 }
 function timeAverageGrowth(f, q, G, B) {
@@ -175,11 +178,17 @@ function runSelfTest() {
     close('S2 A', dcf({ fcf1: 100, g: 0.08, n: 10, r: 0.09, gT: 0.025 }).value, 2212.023170226492);
     close('S2 B', dcf({ fcf1: 115, g: 0.10, n: 10, r: 0.11, gT: 0.025 }).value, 2146.642472089947);
     close('S2 S', dcf({ fcf1: 100, g: 0.08, n: 10, r: 0.12, gT: 0.025 }).value, 1456.64839556544);
+    const revNaN = impliedGrowth({ price: NaN, fcf1: 100, n: 10, r: 0.10, gT: 0.025 });
+    total++; if (revNaN.ok !== false) failures.push('S2 reverse NaN price: ok should be false');
+    total++; if (revNaN.g !== null) failures.push('S2 reverse NaN price: g should be null');
+    total++; if (impliedGrowth({ price: 50000, fcf1: 100, n: 10, r: 0.10, gT: 0.025 }).ok !== false) failures.push('S2 reverse out-of-range price: ok should be false');
     close('S3 V_T', dcf({ fcf1: 40, g: 0.05, n: 10, r: 0.10, gT: 0.02 }).value, 602.6256194868424);
     close('S3 V_A', dcf({ fcf1: 300, g: 0.04, n: 10, r: 0.10, gT: 0.02 }).value, 4245.471062688277);
     const m = mergerModel(MERGER_DEFAULTS);
     const mStar = mergerModel({ ...MERGER_DEFAULTS, S: m.impliedSynergy });
     close('S3 implied synergy zeroes VC', mStar.valueCreated + 1, 1, 1e-9);
+    total++; if (mergerModel({ ...MERGER_DEFAULTS, pS: 0 }).impliedSynergy !== null) failures.push('S3 impliedSynergy at pS=0 should be null');
+    total++; if (!(Math.abs(mergerModel({ ...MERGER_DEFAULTS, stockShare: 0 }).wealthTransfer) < 1e-9)) failures.push('S3 wealthTransfer at stockShare=0 should be ~0');
     close('S4 paretoMean', paretoMean(0.20, 1.5), 0.6, 1e-12);
     total++; if (paretoMean(0.20, 1.0) !== Infinity) failures.push('S4 paretoMean(alpha=1) should be Infinity');
     close('S5 kelly', kellyFraction(0.5, 1.5, 0.6), 0.25, 1e-12);
@@ -187,9 +196,32 @@ function runSelfTest() {
     close('S5 g(1.0)', timeAverageGrowth(1.0, 0.5, 1.5, 0.6), -0.05268025782891317);
     close('S5 g_ens(1.0)', ensembleGrowth(1.0, 0.5, 1.5, 0.6), 0.04879016416943205);
     close('S5 lottery kelly', kellyFraction(0.05, 20, 0.7), 0.11666666666666667, 1e-12);
+    close('S5 kelly degenerate: a<=0, q=1', kellyFraction(1, 1, 0.6), 0, 1e-12);
+    close('S5 kelly degenerate: a<=0 wins over b<=0', kellyFraction(0.5, 1, 1), 0, 1e-12);
+    close('S5 kelly degenerate: b<=0', kellyFraction(0, 1.5, 1), 1, 1e-12);
+    total++; if ([kellyFraction(1, 1, 0.6), kellyFraction(0.5, 1, 1), kellyFraction(0, 1.5, 1)].some(Number.isNaN)) failures.push('S5 kelly degenerate: NaN present');
     const sim = simulatePaths({ f: 1.0, q: 0.5, G: 1.5, B: 0.6, c: 0, T: 60, eps: 0.05, nPaths: 200, seed: 42 });
     total++; if (!(sim.medianFinal < 1 && sim.meanFinal > 1)) failures.push(`S5 sim: median ${sim.medianFinal} should be < 1 < mean ${sim.meanFinal}`);
     total++; if (sim.paths.length !== 200 || sim.paths[0].length !== 61) failures.push('S5 sim: wrong shape');
+    total++;
+    {
+        let ok = true;
+        for (let i = 0; i < sim.paths.length && ok; i++) {
+            if (sim.ruinedBy[i] !== 1) continue;
+            const w = sim.paths[i];
+            if (w[w.length - 1] !== 0.05) { ok = false; break; }
+            let frozen = false;
+            for (let t = 0; t < w.length; t++) {
+                if (frozen) { if (w[t] !== 0.05) { ok = false; break; } }
+                else if (w[t] === 0.05) { frozen = true; }
+            }
+        }
+        if (!ok) failures.push('S5 ruin freezing: a ruined path did not stay at eps for all periods after ruin');
+    }
+    const rngThin = seededRandom(7);
+    const retsThin = sampleReturns(rngThin, { mu: 0.08, sigma: 0.10, p: 0.05, xm: 0.20, alpha: 1.5, n: 200000, thin: true });
+    const rmThin = runningMean(retsThin);
+    total++; if (!(Math.abs(rmThin[rmThin.length - 1] - 0.05) < 0.005)) failures.push(`S4 thin regime running mean: got ${rmThin[rmThin.length - 1]}, want within 0.005 of 0.05`);
     const passed = total - failures.length;
     console.log(`valuation selftest: ${passed}/${total} passed`);
     failures.forEach(f => console.error('  FAIL ' + f));

@@ -369,7 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initSandbox3();
     initSandbox4();
     initSandbox5();
-    // initSandbox6() is appended by Task 9.
 });
 
 // ── Formatting helpers used by every sandbox ────────────────
@@ -392,7 +391,7 @@ function initSandbox1() {
     const update = debounce(() => {
         // Guard: keep gT at least 0.5 points below r, and say so.
         let clamped = false;
-        if (state.gT > state.r - 0.005) { state.gT = state.r - 0.005; clamped = true; }
+        if (state.gT > state.r - 0.005 + 1e-9) { state.gT = state.r - 0.005; clamped = true; }
         if (gTSlider) { gTSlider.value = state.gT; gTSlider.nextElementSibling.textContent = fmtPct(state.gT); }
         const res = dcf(state);
         drawS1(res, state);
@@ -448,7 +447,7 @@ function renderS1Readout(res, state, clamped) {
         &nbsp;·&nbsp; <strong>terminal share ${fmtPct(res.terminalShare)}</strong></p>
         <p>Sensitivity of $V$ to one point of $r$ and half a point of $g_T$:</p>
         ${grid}
-        ${callout('take', 'Your take', `At the defaults the terminal lump is over half the value. Most of "the value" is two parameters, $r$ and $g_T$, applied to a year-$N$ number that is itself a forecast. Move $r$ by one point and watch the total move by more than the entire first three years of cash.`)}
+        ${callout('take', 'Your take', `At the defaults the terminal lump is over half the value. Most of "the value" is two parameters, $r$ and $g_T$, applied to a year-$N$ number that is itself a forecast. Move $r$ by one point and watch the total move by more than the entire first two years of cash.`)}
     `;
     renderAllMath();
 }
@@ -538,7 +537,7 @@ function renderS2Readout(v, st, deal) {
             At price ${fmtMoney(st.price)}, Buyer ${best} keeps ${fmtMoney(bs)} of surplus and the seller keeps ${fmtMoney(ss)}.
             Where inside the zone the price lands is negotiation, not valuation.</p>`;
     }
-    const note = v.A > v.B ? `<p>Note the default result: the strategic buyer's 15% synergy and two extra points of growth <em>lose</em> to the financial buyer's two points of cheaper capital. The exponent beats the numerator.</p>` : '';
+    const note = v.A > v.B ? `<p>Note which buyer wins: when it is A, the financial buyer's cheaper capital has beaten the strategic buyer's synergy and growth. The exponent beats the numerator.</p>` : '';
     document.getElementById('readout2').innerHTML = body + note +
         callout('take', 'Your take', 'Same asset, three numbers, by construction. Each party discounts at their own alternative return and forecasts what they would do with the business. The DCF is not opposed to marginal-utility value theory. It is that theory\'s arithmetic, and the transaction happens only where the buyer\'s number exceeds the seller\'s: gains from trade, nothing more mystical.');
     renderAllMath();
@@ -563,7 +562,7 @@ function initSandbox3() {
         renderS3Readout(m, st);
     });
 
-    createSlider(controls, { label: 'Offer price per target share', id: 's3-p', min: +(0.5 * standalonePerShare).toFixed(2), max: +(2 * standalonePerShare).toFixed(2), step: 0.25, value: st.offerPerShare, format: v => v.toFixed(2), onChange: v => { st.offerPerShare = v; update(); } });
+    createSlider(controls, { label: 'Offer price per target share', id: 's3-p', min: Math.floor(0.5 * standalonePerShare / 0.25) * 0.25, max: Math.ceil(2 * standalonePerShare / 0.25) * 0.25, step: 0.25, value: st.offerPerShare, format: v => v.toFixed(2), onChange: v => { st.offerPerShare = v; update(); } });
     createSlider(controls, { label: 'Annual synergy S (run-rate)', id: 's3-s', min: 0, max: 40, step: 0.5, value: st.S, onChange: v => { st.S = v; update(); } });
     createSlider(controls, { label: 'Synergy realization p_s', id: 's3-ps', min: 0, max: 1, step: 0.05, value: st.pS, format: fmtPct, onChange: v => { st.pS = v; update(); } });
     createSlider(controls, { label: 'Integration cost I (year 1)', id: 's3-i', min: 0, max: 60, step: 1, value: st.I, onChange: v => { st.I = v; update(); } });
@@ -603,7 +602,11 @@ function renderS3Readout(m, st) {
         <p><strong>Per share:</strong> acquirer ${m.acqPerShareBefore.toFixed(2)} before, ${m.acqPerShareAfter.toFixed(2)} after, with ${fmtMoney(m.newShares)} new shares issued.
            ${Math.abs(m.wealthTransfer) > 0.01 ? `The per-share route gives value created of ${fmtMoney(m.valueCreated + m.wealthTransfer)}, which differs from the waterfall by ${fmtMoney(m.wealthTransfer)}: that gap is the wealth transfer from issuing stock at the standalone price rather than the post-deal price. It is labeled here rather than hidden.` : 'With no stock issued the per-share route and the waterfall agree exactly.'}</p>
         <p><strong>Financing:</strong> ${flagged.length ? `the acquired business does not cover its own integration cost and deal-debt service in year${flagged.length > 1 ? 's' : ''} ${flagged.join(', ')}. Someone raises money or the plan changes.` : 'the acquired business covers its own integration cost and deal-debt service every year.'}</p>
-        ${callout('siren', 'Siren check', `This offer needs <strong>${fmtMoney(m.impliedSynergy)}</strong> per year of realized synergy to break even, against a target that generates ${fmtMoney(st.target.fcf1)} in its first year. Has anyone in this industry ever realized that? The synergy line is the free parameter that fits any premium.`)}
+        ${callout('siren', 'Siren check', m.impliedSynergy === null
+            ? `No amount of synergy breaks this deal even if none of it is realized. At $p_s = 0$ the synergy line is a promise with no cash behind it.`
+            : m.impliedSynergy <= 0
+                ? `This offer breaks even with no synergy at all: the price paid is below the target's standalone value plus costs. Ask instead why the seller would accept it.`
+                : `This offer needs <strong>${fmtMoney(m.impliedSynergy)}</strong> per year of realized synergy to break even, against a target that generates ${fmtMoney(st.target.fcf1)} in its first year. Has anyone in this industry ever realized that? The synergy line is the free parameter that fits any premium.`)}
         ${callout('take', 'Your take', 'The standalone DCF approximates value-to-anyone. The synergy term is value-to-this-buyer, and it is different for every bidder because each brings different overlap, distribution, and financing. Same asset, different buyers, different numbers, by construction. This is your marginal-utility point made literal.')}
     `;
     renderAllMath();
@@ -698,7 +701,7 @@ function renderS4Readout(est, trueMean, st) {
         ${banner}
         <p>${trueMean === null ? '' : `True mean in both regimes: <span class="estimate">${fmtPct2(trueMean)}</span>. `}
            Across ${st.reps} histories of ${st.histLen} periods, the estimate you would have made:<br>${thinLine};<br>${fatLine}.</p>
-        <p>Notice the 5th-to-95th band barely separates the regimes. It is a robust statistic, which means it is built to ignore exactly the region the fat tail lives in. Pick a tail-blind statistic and the tail disappears from your report, not from the world. The 1-in-100 and worst-history columns are where the two regimes actually part company.</p>
+        ${est.thin.length ? `<p>Notice the 5th-to-95th band barely separates the regimes. It is a robust statistic, which means it is built to ignore exactly the region the fat tail lives in. Pick a tail-blind statistic and the tail disappears from your report, not from the world. The 1-in-100 and worst-history columns are where the two regimes actually part company.</p>` : ''}
         <p>Thirty periods is a typical equity-premium sample. In the fat regime the number you would have plugged into $r$ depends on which history you happened to live through, and no history contains the loss that dominates the expectation.</p>
         ${callout('take', 'Your take', 'This is the risk premium the DCF asked you to put in the exponent. A scalar premium assumes the estimator converges and that risk shaves off the same fraction every year. Under a power-law tail neither holds. The fix is not a better estimate of the premium; it is to stop hiding risk in the exponent and put it in the cash flows as explicit scenarios, with ruin as its own scenario.')}
     `;
