@@ -40,6 +40,7 @@ Interactive learning environment for data science, finance, ML, web technologies
 - `instantiateWasm(bytes, imports)` — WebAssembly.instantiate wrapper
 - `createBinaryViewer(container, bytes, regions)` — color-coded hex dump of WASM binaries
 - `benchmark(fn1, fn2, iterations)` — timing comparison for two functions
+- `.callout`, `.callout.take`, `.callout.siren`, `.callout.warn` (explore.css) — annotated boxes for the learner's own arguments, plausibility warnings, and guard states
 
 ## Technical Notes
 
@@ -47,6 +48,7 @@ Interactive learning environment for data science, finance, ML, web technologies
 - **`generateDiDData()`** supports: `trendDivergence` (breaks parallel trends) and `anticipation` (leaks treatment into pre-period). Both are demonstrated in Sandbox 3.
 - **Notation reference**: collapsible `<details>` panel using `.notation-ref` CSS class. Add new entries as concepts are introduced.
 - **Serve locally**: `./serve.sh` or `python3 -m http.server 8080` from repo root
+- **Valuation page guards**: `gT` is clamped below `r` with a visible warning; reverse DCF reports out-of-range instead of a boundary value; Sandbox 4 removes its reference line at `α ≤ 1`; financing shares are clamped to sum to one.
 
 ## Current State and Next Steps
 
@@ -76,6 +78,16 @@ React exploration (web-dev/react/) — single page:
 3. Render lifecycle, hooks internals, stale closure gotcha (pipeline animation, hooks array, conditional hook bug, useEffect timing)
 4. Decision framework (comparison matrix + interactive questionnaire: React vs HTMX vs Alpine vs Svelte vs Vanilla)
 5. Rosetta Stone (same widget in 5 frameworks via tabbed code)
+
+Valuation exploration (finance/valuation/) — first finance page, 6 sandboxes:
+1. The Machine (DCF as a geometric-kernel sum; terminal-value share; sensitivity grid)
+2. Whose Number Is It? (two buyers + seller, ZOPA, reverse DCF via bisection)
+3. After the Deal (merger layer: synergies, financing mix, close probability, implied synergy, waterfall)
+4. The Premium That Can't Be Estimated (running means under Pareto vs fixed losses; estimate spread)
+5. One Path, Not an Ensemble (multiplicative wealth with ruin barrier; ensemble vs median; Kelly; decision rule)
+6. Rosetta Stone (Python from scripts/dcf.py + spreadsheet cell layouts and Goal Seek)
+Pure math lives in finance/valuation/valuation.js and is Node-testable:
+`node -e "require('./finance/valuation/valuation.js').runSelfTest()"`.
 
 **Planned tracks (see docs/plans/2026-03-09-new-tracks-design.md):**
 - **graphics/vulkan/** — shader mental model, pipeline architecture, Odin exercises

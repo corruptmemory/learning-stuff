@@ -754,3 +754,36 @@ code {
     font-weight: 600;
     margin-left: 3rem;
 }
+
+/* ── Callouts (valuation exploration) ─────────────────────── */
+.callout {
+    margin: 1rem 0;
+    padding: 0.9rem 1.1rem;
+    border-radius: 6px;
+    border-left: 4px solid var(--color-border);
+    background: var(--color-surface);
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+.callout .callout-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+    color: var(--color-text-muted);
+}
+.callout.take { border-left-color: var(--color-accent); background: var(--color-accent-light); }
+.callout.take .callout-tag { color: var(--color-accent); }
+.callout.siren { border-left-color: var(--color-highlight); background: #fffbeb; }
+.callout.siren .callout-tag { color: #b45309; }
+.callout.warn { border-left-color: var(--color-treatment); background: #fef2f2; }
+.sens-grid { border-collapse: collapse; font-family: var(--font-mono); font-size: 0.85rem; margin-top: 0.5rem; }
+.sens-grid th, .sens-grid td { padding: 0.3rem 0.6rem; border: 1px solid var(--color-border); text-align: right; }
+.sens-grid th { background: var(--color-bg); font-weight: 600; }
+.sens-grid td.base { background: var(--color-accent-light); font-weight: 700; }
+.two-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 800px) { .two-charts { grid-template-columns: 1fr; } }
+.preset-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.number-input { font-family: var(--font-mono); padding: 0.3rem 0.5rem; width: 8em; border: 1px solid var(--color-border); border-radius: 4px; }
