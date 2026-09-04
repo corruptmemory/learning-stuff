@@ -12,6 +12,8 @@
 
 **One refinement over the spec:** the spec put the pure functions "first in the page's script block." This plan moves them into `valuation.js` (same directory, loaded by the page) so the self-test can run from the shell with `node` as well as in the browser console. Behavior is identical; the page still calls `runSelfTest()` on load and logs the result.
 
+**Executed 2026-09-04** on branch `valuation-exploration`, thirteen commits, one per task plus three review fixes. Deviations from the text below are listed in the spec's "Execution Amendments" section; the self-test grew from 22 to 33 assertions in the final fix commit, so expected console lines below that say `22/22` read `33/33` on the merged page.
+
 ## Global Constraints
 
 - Never edit `shared/vendor/`; never run `go build`/`templ` directly; use `./build.sh` for venvs.

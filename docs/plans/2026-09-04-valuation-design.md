@@ -311,3 +311,33 @@ own numbers; a JS test framework.
 - Taleb, *Statistical Consequences of Fat Tails* (2020) — estimator non-convergence
 - Peters, "The ergodicity problem in economics," *Nature Physics* 15 (2019)
 - Kelly, "A New Interpretation of Information Rate" (1956)
+
+## Execution Amendments (2026-09-04)
+
+Recorded after implementation and review. The sections above are the approved
+design; this is what changed during build and review, with the reason.
+
+- **Pure functions live in `finance/valuation/valuation.js`**, loaded by the page and
+  `require()`-able from Node, rather than inline in the page. Same behavior; the
+  self-test runs from the shell. `runSelfTest()` ends at 33 assertions.
+- **Sandbox 3's cash strip shows the acquired business's own coverage** of integration
+  cost and deal-debt service (`cfTarget`), not the combined total: at the spec's numbers
+  the acquirer's cash swamps the flag so it could never fire. The module still returns
+  the combined `cf`. Implied synergy is `null` at $p_s = 0$ and the siren callout has
+  three branches (no realization, breaks even with no synergy, the number).
+- **Sandbox 4's readout adds the 1st-percentile and worst-history estimate** per regime
+  alongside the 5th-to-95th band, because that band is a robust statistic and ignores
+  the tail by construction; the readout says so. The thin regime is skipped at
+  $\alpha \le 1$, where its matched loss has no finite mean.
+- **Sandbox 5's bad-multiplier slider floors at 0.05**, not 0: $B = 0$ with $f = 1$ puts
+  $\ln 0$ in the analytic growth curve. `kellyFraction` returns 0 when $G \le 1$ and 1
+  when $B \ge 1$ instead of dividing by zero.
+- **The seventh callout**, Sandbox 2's siren, appears after the reverse-DCF button is
+  clicked; six are present at load. Reverse DCF rejects a blank or non-numeric price in
+  both the page and the module.
+- **Sandbox 1's clamp** compares with a $10^{-9}$ tolerance so it does not fire at the
+  exact boundary from float rounding.
+- **Deferred as cosmetic:** Sandbox 4's fixed y-window can push a non-converging line
+  off-frame near $\alpha = 1$; Sandbox 2's price slider is not refreshed in the no-deal
+  state; a set-slider pattern is repeated four times in the page; `.two-charts` in
+  `shared/explore.css` is unused.
