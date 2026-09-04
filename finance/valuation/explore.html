@@ -182,8 +182,168 @@
     <!-- SANDBOX 6 -->
     <section class="sandbox" id="sandbox6">
         <h2>Sandbox 6: The Code: Python and Spreadsheet Side by Side</h2>
-        <div class="description"><p>Filled in Task 9.</p></div>
-        <div id="rosetta6"></div>
+        <div class="description">
+            <p>
+                The arithmetic is one line in either tool. What differs is the audit trail. The video's
+                complaint about the low-effort workbook was not the numbers; it was the missing source sheet
+                and checklist. Every assumption in its own labeled cell, referenced by name, is the
+                deliverable.
+            </p>
+        </div>
+        <div id="rosetta6">
+
+            <div class="rosetta-section">
+                <h3>The DCF (what Sandbox 1 computes)</h3>
+                <p class="rosetta-concept">$V = \sum_{t=1}^{N} FCF_t\,(1+r)^{-t} + TV\,(1+r)^{-N}$, with $TV = FCF_N (1+g_T)/(r-g_T)$</p>
+                <div class="rosetta-panels">
+                    <div class="rosetta-panel python">
+                        <div class="rosetta-lang">Python</div>
+<pre><code>def dcf(fcf1, g, n, r, g_t):
+    if g_t &gt;= r:
+        raise ValueError("terminal growth must be below the discount rate")
+    pv_explicit = 0.0
+    fcf = fcf1
+    for t in range(1, n + 1):
+        if t &gt; 1:
+            fcf *= 1 + g
+        pv_explicit += fcf / (1 + r) ** t
+    fcf_n = fcf1 * (1 + g) ** (n - 1)
+    tv = fcf_n * (1 + g_t) / (r - g_t)
+    pv_terminal = tv / (1 + r) ** n
+    value = pv_explicit + pv_terminal
+    return dict(value=value, pv_explicit=pv_explicit,
+                pv_terminal=pv_terminal, tv=tv,
+                terminal_share=pv_terminal / value)
+
+dcf(100, 0.08, 10, 0.10, 0.025)["value"]   # 1891.4986…</code></pre>
+                    </div>
+                    <div class="rosetta-panel r">
+                        <div class="rosetta-lang">Spreadsheet (LibreOffice / Excel)</div>
+<pre><code># Inputs sheet — one assumption per NAMED cell (Sheet ▸ Named Ranges)
+fcf1   100        ← first-year cash
+g      0.08       ← explicit growth
+r      0.10       ← discount rate
+gT     0.025      ← terminal growth
+N      10         ← explicit years
+
+# Model sheet — columns A:D, rows 2..11 for years 1..10
+A: Year     B: FCF                 C: DF            D: PV
+1           =fcf1                  =1/(1+r)^A2      =B2*C2
+2           =B2*(1+g)              =1/(1+r)^A3      =B3*C3
+…           (fill down)            (fill down)      (fill down)
+
+TV          =B11*(1+gT)/(r-gT)               ← year-N cash, grown once, capitalized
+Value       =SUM(D2:D11) + TV/(1+r)^N        ← 1891.50
+TV share    =(TV/(1+r)^N) / Value            ← 55.7%
+
+# Why not =NPV(r, B2:B11)?  It works, but it silently assumes end-of-period cash
+# and excludes t = 0. Writing the columns out keeps every step inspectable.</code></pre>
+                    </div>
+                </div>
+                <div class="rosetta-note">
+                    <strong>Key mapping:</strong> the loop over <code>t</code> is the fill-down. The Gordon term is one cell in
+                    both. The spreadsheet's only real advantage is that a reviewer can click any number and see where it came from,
+                    which is exactly the property the video found missing.
+                </div>
+            </div>
+
+            <div class="rosetta-section">
+                <h3>Reverse DCF (what Sandbox 2 solves)</h3>
+                <p class="rosetta-concept">Given a price, find the $g_e$ that makes $V(g_e) = P$. $V$ is monotone in $g_e$, so bisection or Goal Seek is safe.</p>
+                <div class="rosetta-panels">
+                    <div class="rosetta-panel python">
+                        <div class="rosetta-lang">Python</div>
+<pre><code>def implied_growth(price, fcf1, n, r, g_t, lo=-0.20, hi=0.60, tol=1e-12):
+    if price &lt; dcf(fcf1, lo, n, r, g_t)["value"] or \
+       price &gt; dcf(fcf1, hi, n, r, g_t)["value"]:
+        return None                      # outside what this shape can produce
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if dcf(fcf1, mid, n, r, g_t)["value"] &lt; price:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo &lt; tol:
+            break
+    return 0.5 * (lo + hi)
+
+implied_growth(1891.4986, 100, 10, 0.10, 0.025)   # 0.0800</code></pre>
+                    </div>
+                    <div class="rosetta-panel r">
+                        <div class="rosetta-lang">Spreadsheet</div>
+<pre><code># Goal Seek (Tools ▸ Goal Seek in LibreOffice; Data ▸ What-If ▸ Goal Seek in Excel)
+Formula cell:   Value          (the =SUM(...)+TV/(1+r)^N cell)
+Target value:   1891.50        (the price you were quoted)
+Variable cell:  g              (the named growth input)
+
+# Result: g = 0.0800. Now the sheet is a claim about the world:
+# "this price requires 8% growth for 10 years, then 2.5% forever."
+# Goal Seek has no range guard; if it fails to converge, the price is
+# outside what the forecast shape can produce. Do not widen the shape
+# to reach it.</code></pre>
+                    </div>
+                </div>
+                <div class="rosetta-note">
+                    <strong>Key mapping:</strong> bisection and Goal Seek are the same operation. The Python version refuses
+                    out-of-range prices explicitly; the spreadsheet version fails silently or converges to nonsense, which is why
+                    the guard sentence is written into the recipe.
+                </div>
+            </div>
+
+            <div class="rosetta-section">
+                <h3>The founder's paths (what Sandbox 5 simulates)</h3>
+                <p class="rosetta-concept">$W_{t+1} = W_t\,(1 - f + f M_t) - c$, frozen at $\varepsilon$; Kelly $f^* = q/b - (1-q)/a$ with $a = G-1$, $b = 1-B$.</p>
+                <div class="rosetta-panels">
+                    <div class="rosetta-panel python">
+                        <div class="rosetta-lang">Python</div>
+<pre><code>import math
+import numpy as np
+
+def kelly(q, G, B):
+    a, b = G - 1.0, 1.0 - B
+    return max(0.0, min(1.0, q / b - (1 - q) / a))
+
+def time_avg_growth(f, q, G, B):
+    return q * math.log(1 - f + f * G) + (1 - q) * math.log(1 - f + f * B)
+
+def simulate_paths(f, q, G, B, c, T, eps, n_paths=200, seed=42):
+    rng = np.random.default_rng(seed)
+    W = np.ones((n_paths, T + 1))
+    alive = np.ones(n_paths, dtype=bool)
+    for t in range(T):
+        M = np.where(rng.random(n_paths) &lt; q, G, B)
+        nxt = W[:, t] * (1 - f + f * M) - c
+        ruined = nxt &lt;= eps
+        nxt = np.where(ruined, eps, nxt)
+        alive &amp;= ~ruined
+        W[:, t + 1] = np.where(alive | ruined, nxt, eps)
+    return W
+
+kelly(0.5, 1.5, 0.6)                 # 0.25
+time_avg_growth(1.0, 0.5, 1.5, 0.6)  # -0.0527  (the Peters coin, all in)
+W = simulate_paths(1.0, 0.5, 1.5, 0.6, 0.0, 60, 0.05)
+np.median(W[:, -1]), W[:, -1].mean() # median « 1 « mean</code></pre>
+                    </div>
+                    <div class="rosetta-panel r">
+                        <div class="rosetta-lang">Spreadsheet</div>
+<pre><code># No twin.
+
+# Two hundred paths × sixty periods is twelve thousand cells that each
+# carry branching state (alive or frozen at ε) and a random draw. It can
+# be done; it cannot be audited. The moment the model needs a distribution
+# of outcomes rather than one row of them, the spreadsheet stops being the
+# right tool and the source sheet + checklist become the argument for
+# moving to code.</code></pre>
+                    </div>
+                </div>
+                <div class="rosetta-note">
+                    <strong>Key mapping:</strong> the DCF is a single row of arithmetic and belongs in a spreadsheet with named
+                    cells. The founder's question is a distribution over paths and belongs in code. Knowing which tool a question
+                    wants is most of the skill.
+                </div>
+            </div>
+
+        </div>
     </section>
 
     <section class="intro" id="references">
