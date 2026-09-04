@@ -96,12 +96,25 @@
     <!-- SANDBOX 2 -->
     <section class="sandbox" id="sandbox2">
         <h2>Sandbox 2: Whose Number Is It?</h2>
-        <div class="description"><p>Filled in Task 5.</p></div>
+        <div class="description">
+            <p>
+                Same company as Sandbox 1, at its default numbers. A financial buyer, a strategic buyer,
+                and the seller each run a DCF with their own required return, their own forecast, and
+                their own synergies. Three numbers. Then the honest use: type a price and ask what growth it
+                requires.
+            </p>
+        </div>
         <div class="sandbox-content">
             <div class="chart-container" id="chart2"></div>
             <div class="controls" id="controls2"></div>
         </div>
         <div class="readout" id="readout2"></div>
+        <div class="readout" id="reverse2">
+            <p><strong>Reverse DCF.</strong> Hold $N$, $r$, $g_T$ at Sandbox 1's defaults. Enter a price:</p>
+            <p><input class="number-input" id="s2-price" type="number" step="10" value="1891.5">
+               <button id="s2-solve">What must be true?</button></p>
+            <div id="reverse2-out"></div>
+        </div>
     </section>
 
     <!-- SANDBOX 3 -->
@@ -163,7 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     runSelfTest();
     renderAllMath();
     initSandbox1();
-    // initSandbox2() … initSandbox6() are appended by Tasks 5–9.
+    initSandbox2();
+    // initSandbox3() … initSandbox6() are appended by Tasks 6–9.
 });
 
 // ── Formatting helpers used by every sandbox ────────────────
@@ -244,6 +258,93 @@ function renderS1Readout(res, state, clamped) {
         ${grid}
         ${callout('take', 'Your take', `At the defaults the terminal lump is over half the value. Most of "the value" is two parameters, $r$ and $g_T$, applied to a year-$N$ number that is itself a forecast. Move $r$ by one point and watch the total move by more than the entire first three years of cash.`)}
     `;
+    renderAllMath();
+}
+
+// ── SANDBOX 2 ───────────────────────────────────────────────
+function initSandbox2() {
+    const controls = document.getElementById('controls2');
+    const base = S1_DEFAULTS;
+    const st = { A: { r: 0.09, g: 0.08, s: 0.00 }, B: { r: 0.11, g: 0.10, s: 0.15 }, rS: 0.12, price: null };
+    let priceSlider;
+
+    const values = () => ({
+        A: dcf({ fcf1: base.fcf1 * (1 + st.A.s), g: st.A.g, n: base.n, r: st.A.r, gT: base.gT }).value,
+        B: dcf({ fcf1: base.fcf1 * (1 + st.B.s), g: st.B.g, n: base.n, r: st.B.r, gT: base.gT }).value,
+        S: dcf({ fcf1: base.fcf1, g: base.g, n: base.n, r: st.rS, gT: base.gT }).value,
+    });
+
+    const update = debounce(() => {
+        const v = values();
+        const top = Math.max(v.A, v.B);
+        const deal = top > v.S;
+        if (deal) {
+            priceSlider.min = v.S; priceSlider.max = top; priceSlider.step = (top - v.S) / 200;
+            if (st.price === null || st.price < v.S || st.price > top) st.price = 0.5 * (v.S + top);
+            priceSlider.value = st.price;
+            priceSlider.nextElementSibling.textContent = fmtMoney(st.price);
+        }
+        drawS2(v, st, deal);
+        renderS2Readout(v, st, deal);
+    });
+
+    const pct = (label, id, obj, key, min, max) => createSlider(controls, { label, id, min, max, step: 0.005, value: obj[key], format: fmtPct, onChange: x => { obj[key] = x; update(); } });
+    pct('Buyer A: required return r', 's2-ra', st.A, 'r', 0.03, 0.30);
+    pct('Buyer A: growth forecast g', 's2-ga', st.A, 'g', 0, 0.30);
+    pct('Buyer A: synergy uplift', 's2-sa', st.A, 's', 0, 0.40);
+    pct('Buyer B: required return r', 's2-rb', st.B, 'r', 0.03, 0.30);
+    pct('Buyer B: growth forecast g', 's2-gb', st.B, 'g', 0, 0.30);
+    pct('Buyer B: synergy uplift', 's2-sb', st.B, 's', 0, 0.40);
+    pct("Seller: alternative return r", 's2-rs', st, 'rS', 0.03, 0.30);
+    priceSlider = createSlider(controls, { label: 'Deal price (inside the zone)', id: 's2-price-slider', min: 0, max: 1, step: 1, value: 0, format: fmtMoney, onChange: x => { st.price = x; update(); } });
+
+    document.getElementById('s2-solve').addEventListener('click', () => {
+        const price = parseFloat(document.getElementById('s2-price').value);
+        const res = impliedGrowth({ price, fcf1: base.fcf1, n: base.n, r: base.r, gT: base.gT });
+        const out = document.getElementById('reverse2-out');
+        if (!res.ok) {
+            out.innerHTML = `<p>No growth rate between −20% and +60% reaches ${fmtMoney(price)}. At those bounds the model gives ${fmtMoney(res.lowValue)} and ${fmtMoney(res.highValue)}. The price is outside what this forecast shape can produce; the model is not the thing to adjust.</p>`;
+        } else {
+            out.innerHTML = `<p>For <strong>${fmtMoney(price)}</strong> to be right, cash must grow at
+                <span class="estimate">${fmtPct2(res.g)}</span> per year for ${base.n} years, then ${fmtPct(base.gT)} forever,
+                with ${fmtPct(base.r)} as your required return.</p>
+                ${callout('siren', 'Siren check', `That is a claim about the world, not about the spreadsheet. Do you believe this business grows at ${fmtPct(res.g)} for a decade? Compare it to what you have seen, not to what sounds reasonable in the room.`)}`;
+        }
+        renderAllMath();
+    });
+
+    update();
+}
+
+function drawS2(v, st, deal) {
+    const names = ['Seller minimum', 'Buyer A maximum', 'Buyer B maximum'];
+    const vals = [v.S, v.A, v.B];
+    const shapes = [], annotations = [];
+    if (deal) {
+        const top = Math.max(v.A, v.B);
+        shapes.push({ type: 'rect', xref: 'x', yref: 'paper', x0: v.S, x1: top, y0: 0, y1: 1, fillcolor: 'rgba(37,99,235,0.08)', line: { width: 0 } });
+        shapes.push({ type: 'line', xref: 'x', yref: 'paper', x0: st.price, x1: st.price, y0: 0, y1: 1, line: { color: '#16a34a', width: 2, dash: 'dash' } });
+        annotations.push({ x: st.price, y: 1.02, xref: 'x', yref: 'paper', text: 'price', showarrow: false, font: { color: '#16a34a' } });
+    }
+    Plotly.react('chart2', [{ type: 'bar', orientation: 'h', x: vals, y: names, marker: { color: ['#dc2626', '#2563eb', '#7c3aed'] }, text: vals.map(fmtMoney), textposition: 'outside' }],
+        plotlyDefaults({ showlegend: false, shapes, annotations, xaxis: { title: 'Value of the same company, to each party' }, margin: { l: 130, t: 30 } }),
+        { responsive: true, displayModeBar: false });
+}
+
+function renderS2Readout(v, st, deal) {
+    const top = Math.max(v.A, v.B), best = v.A >= v.B ? 'A' : 'B';
+    let body;
+    if (!deal) {
+        body = `<p><strong>No deal.</strong> Neither buyer's maximum (${fmtMoney(v.A)}, ${fmtMoney(v.B)}) exceeds the seller's minimum (${fmtMoney(v.S)}). No price makes both sides better off than their alternatives.</p>`;
+    } else {
+        const bs = top - st.price, ss = st.price - v.S;
+        body = `<p>Zone of possible agreement: <strong>${fmtMoney(v.S)}</strong> to <strong>${fmtMoney(top)}</strong>.
+            At price ${fmtMoney(st.price)}, Buyer ${best} keeps ${fmtMoney(bs)} of surplus and the seller keeps ${fmtMoney(ss)}.
+            Where inside the zone the price lands is negotiation, not valuation.</p>`;
+    }
+    const note = v.A > v.B ? `<p>Note the default result: the strategic buyer's 15% synergy and two extra points of growth <em>lose</em> to the financial buyer's two points of cheaper capital. The exponent beats the numerator.</p>` : '';
+    document.getElementById('readout2').innerHTML = body + note +
+        callout('take', 'Your take', 'Same asset, three numbers, by construction. Each party discounts at their own alternative return and forecasts what they would do with the business. The DCF is not opposed to marginal-utility value theory. It is that theory\'s arithmetic, and the transaction happens only where the buyer\'s number exceeds the seller\'s: gains from trade, nothing more mystical.');
     renderAllMath();
 }
 </script>
