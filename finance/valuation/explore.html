@@ -140,9 +140,19 @@
     <!-- SANDBOX 4 -->
     <section class="sandbox" id="sandbox4">
         <h2>Sandbox 4: The Premium That Can't Be Estimated</h2>
-        <div class="description"><p>Filled in Task 7.</p></div>
+        <div class="description">
+            <p>
+                A risk premium is calibrated from a historical sample mean. Here each period's return is a
+                normal draw minus a loss that arrives with probability $p$. On the left the loss, when it
+                comes, is a fixed size. On the right it is Pareto with tail exponent $\alpha$. Both regimes
+                have the <em>same true mean</em>. Only the tail differs. Watch which one settles.
+            </p>
+        </div>
         <div class="sandbox-content">
-            <div class="chart-container" id="chart4"></div>
+            <div>
+                <div class="chart-container" id="chart4"></div>
+                <div class="chart-container" id="chart4b" style="min-height:260px"></div>
+            </div>
             <div class="controls" id="controls4"></div>
         </div>
         <div class="readout" id="readout4"></div>
@@ -187,7 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initSandbox1();
     initSandbox2();
     initSandbox3();
-    // initSandbox4() … initSandbox6() are appended by Tasks 7–9.
+    initSandbox4();
+    // initSandbox5() … initSandbox6() are appended by Tasks 8–9.
 });
 
 // ── Formatting helpers used by every sandbox ────────────────
@@ -423,6 +434,93 @@ function renderS3Readout(m, st) {
         <p><strong>Financing:</strong> ${flagged.length ? `the acquired business does not cover its own integration cost and deal-debt service in year${flagged.length > 1 ? 's' : ''} ${flagged.join(', ')}. Someone raises money or the plan changes.` : 'the acquired business covers its own integration cost and deal-debt service every year.'}</p>
         ${callout('siren', 'Siren check', `This offer needs <strong>${fmtMoney(m.impliedSynergy)}</strong> per year of realized synergy to break even, against a target that generates ${fmtMoney(st.target.fcf1)} in its first year. Has anyone in this industry ever realized that? The synergy line is the free parameter that fits any premium.`)}
         ${callout('take', 'Your take', 'The standalone DCF approximates value-to-anyone. The synergy term is value-to-this-buyer, and it is different for every bidder because each brings different overlap, distribution, and financing. Same asset, different buyers, different numbers, by construction. This is your marginal-utility point made literal.')}
+    `;
+    renderAllMath();
+}
+
+// ── SANDBOX 4 ───────────────────────────────────────────────
+function initSandbox4() {
+    const controls = document.getElementById('controls4');
+    const st = { mu: 0.08, sigma: 0.10, p: 0.05, xm: 0.20, alpha: 1.5, nMax: 10000, histLen: 30, reps: 500, seed: 1 };
+
+    const update = debounce(() => {
+        const trueMean = st.alpha > 1 ? st.mu - st.p * paretoMean(st.xm, st.alpha) : null;
+        const seeds = [0, 1, 2, 3, 4].map(k => st.seed * 1000 + k);
+        const runs = { thin: [], fat: [] };
+        for (const thin of [true, false]) {
+            for (const s of seeds) {
+                const r = sampleReturns(seededRandom(s), { ...st, n: st.nMax, thin });
+                runs[thin ? 'thin' : 'fat'].push(runningMean(r));
+            }
+        }
+        const est = { thin: [], fat: [] };
+        for (const thin of [true, false]) {
+            const rng = seededRandom(st.seed * 7919 + (thin ? 1 : 2));
+            for (let k = 0; k < st.reps; k++) {
+                const r = sampleReturns(rng, { ...st, n: st.histLen, thin });
+                let s = 0; for (let i = 0; i < r.length; i++) s += r[i];
+                est[thin ? 'thin' : 'fat'].push(s / r.length);
+            }
+        }
+        drawS4(runs, est, trueMean, st);
+        renderS4Readout(est, trueMean, st);
+    });
+
+    createSlider(controls, { label: 'Tail exponent α', id: 's4-alpha', min: 1.0, max: 5.0, step: 0.1, value: st.alpha, format: v => v.toFixed(1), onChange: v => { st.alpha = v; update(); } });
+    createSlider(controls, { label: 'Loss probability p', id: 's4-p', min: 0.0, max: 0.20, step: 0.01, value: st.p, format: fmtPct, onChange: v => { st.p = v; update(); } });
+    createSlider(controls, { label: 'Loss scale x_m', id: 's4-xm', min: 0.05, max: 0.50, step: 0.05, value: st.xm, format: fmtPct, onChange: v => { st.xm = v; update(); } });
+    createSlider(controls, { label: 'History length (periods)', id: 's4-h', min: 10, max: 100, step: 5, value: st.histLen, onChange: v => { st.histLen = v; update(); } });
+    createButton(controls, { label: 'Reseed', onClick: () => { st.seed++; update(); } });
+
+    update();
+}
+
+// Log-spaced indices so a 10,000-point running mean plots as ~300 points.
+function logIndices(n) {
+    const out = []; let last = -1;
+    for (let i = 0; i < 300; i++) {
+        const idx = Math.min(n - 1, Math.round(Math.pow(10, i / 300 * Math.log10(n))));
+        if (idx !== last) { out.push(idx); last = idx; }
+    }
+    return out;
+}
+
+function drawS4(runs, est, trueMean, st) {
+    const idx = logIndices(st.nMax);
+    const x = idx.map(i => i + 1);
+    const traces = [];
+    ['thin', 'fat'].forEach((k, j) => {
+        runs[k].forEach((rm, s) => traces.push({ type: 'scatter', mode: 'lines', x, y: idx.map(i => rm[i]),
+            xaxis: j ? 'x2' : 'x', yaxis: j ? 'y2' : 'y', showlegend: false,
+            line: { width: 1.2, color: j ? `rgba(220,38,38,${0.5 + s * 0.1})` : `rgba(37,99,235,${0.5 + s * 0.1})` } }));
+    });
+    const shapes = trueMean === null ? [] : [0, 1].map(j => ({ type: 'line', xref: j ? 'x2' : 'x', yref: j ? 'y2' : 'y', x0: 1, x1: st.nMax, y0: trueMean, y1: trueMean, line: { color: '#111', width: 1.5, dash: 'dot' } }));
+    const yr = trueMean === null ? undefined : [trueMean - 0.15, trueMean + 0.15];
+    Plotly.react('chart4', traces, plotlyDefaults({
+        grid: { rows: 1, columns: 2, pattern: 'independent' },
+        xaxis: { type: 'log', title: 'n (thin tail: fixed loss)', domain: [0, 0.47] }, yaxis: { title: 'running mean', range: yr },
+        xaxis2: { type: 'log', title: `n (fat tail: Pareto α = ${st.alpha.toFixed(1)})`, domain: [0.53, 1] }, yaxis2: { range: yr },
+        shapes, showlegend: false, margin: { t: 20 },
+    }), { responsive: true, displayModeBar: false });
+
+    Plotly.react('chart4b', [
+        { type: 'histogram', name: 'thin tail', x: est.thin, opacity: 0.65, marker: { color: '#2563eb' }, nbinsx: 60 },
+        { type: 'histogram', name: 'fat tail', x: est.fat, opacity: 0.65, marker: { color: '#dc2626' }, nbinsx: 60 },
+    ], plotlyDefaults({ barmode: 'overlay', xaxis: { title: `mean return you would have estimated from ${st.histLen} periods` }, yaxis: { title: 'count of histories' }, margin: { t: 10 }, legend: { orientation: 'h', y: 1.15 } }), { responsive: true, displayModeBar: false });
+}
+
+function quantile(arr, q) { const s = Float64Array.from(arr).sort(); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; }
+
+function renderS4Readout(est, trueMean, st) {
+    const w = k => quantile(est[k], 0.95) - quantile(est[k], 0.05);
+    const banner = trueMean === null ? `<div class="callout warn"><div class="callout-tag">No finite mean</div>At $\\alpha \\le 1$ the Pareto loss has no expectation. There is nothing for the running mean to converge to, so no sample size helps. The reference line is gone because there is no true value to draw.</div>` : '';
+    document.getElementById('readout4').innerHTML = `
+        ${banner}
+        <p>${trueMean === null ? '' : `True mean in both regimes: <span class="estimate">${fmtPct2(trueMean)}</span>. `}
+           Spread of the estimate (5th to 95th percentile) across ${st.reps} histories of ${st.histLen} periods:
+           thin tail <strong>${fmtPct2(w('thin'))}</strong>, fat tail <strong>${fmtPct2(w('fat'))}</strong>.</p>
+        <p>Thirty periods is a typical equity-premium sample. In the fat regime the number you would have plugged into $r$ depends on which history you happened to live through, and no history contains the loss that dominates the expectation.</p>
+        ${callout('take', 'Your take', 'This is the risk premium the DCF asked you to put in the exponent. A scalar premium assumes the estimator converges and that risk shaves off the same fraction every year. Under a power-law tail neither holds. The fix is not a better estimate of the premium; it is to stop hiding risk in the exponent and put it in the cash flows as explicit scenarios, with ruin as its own scenario.')}
     `;
     renderAllMath();
 }
