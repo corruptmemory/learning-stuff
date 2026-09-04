@@ -76,9 +76,18 @@
     <!-- SANDBOX 1 -->
     <section class="sandbox" id="sandbox1">
         <h2>Sandbox 1: The Machine</h2>
-        <div class="description"><p>Filled in Task 4.</p></div>
+        <div class="description">
+            <p>
+                A business is treated as a machine that emits cash to its owners. Each year's cash is
+                shrunk by $(1+r)^{-t}$, and everything after year $N$ is folded into one terminal lump.
+                Drag $r$ and $g_T$ and watch which bar does the work.
+            </p>
+        </div>
         <div class="sandbox-content">
-            <div class="chart-container" id="chart1"></div>
+            <div>
+                <div class="chart-container" id="chart1"></div>
+                <div class="chart-container" id="chart1b" style="min-height:120px"></div>
+            </div>
             <div class="controls" id="controls1"></div>
         </div>
         <div class="readout" id="readout1"></div>
@@ -153,7 +162,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     runSelfTest();
     renderAllMath();
-    // initSandbox1() … initSandbox6() are appended by Tasks 4–9.
+    initSandbox1();
+    // initSandbox2() … initSandbox6() are appended by Tasks 5–9.
 });
 
 // ── Formatting helpers used by every sandbox ────────────────
@@ -163,6 +173,78 @@ const fmtPct2 = v => (v * 100).toFixed(2) + '%';
 const debounce = (fn, ms = 50) => { let h; return (...a) => { clearTimeout(h); h = setTimeout(() => fn(...a), ms); }; };
 function callout(kind, tag, html) {
     return `<div class="callout ${kind}"><div class="callout-tag">${tag}</div>${html}</div>`;
+}
+
+// ── SANDBOX 1 ───────────────────────────────────────────────
+const S1_DEFAULTS = { fcf1: 100, g: 0.08, n: 10, r: 0.10, gT: 0.025 };
+
+function initSandbox1() {
+    const controls = document.getElementById('controls1');
+    const state = { ...S1_DEFAULTS };
+    let gTSlider;
+
+    const update = debounce(() => {
+        // Guard: keep gT at least 0.5 points below r, and say so.
+        let clamped = false;
+        if (state.gT > state.r - 0.005) { state.gT = state.r - 0.005; clamped = true; }
+        if (gTSlider) { gTSlider.value = state.gT; gTSlider.nextElementSibling.textContent = fmtPct(state.gT); }
+        const res = dcf(state);
+        drawS1(res, state);
+        renderS1Readout(res, state, clamped);
+    });
+
+    createSlider(controls, { label: 'Explicit growth g', id: 's1-g', min: 0, max: 0.30, step: 0.005, value: state.g, format: fmtPct, onChange: v => { state.g = v; update(); } });
+    createSlider(controls, { label: 'Explicit years N', id: 's1-n', min: 3, max: 15, step: 1, value: state.n, onChange: v => { state.n = v; update(); } });
+    createSlider(controls, { label: 'Discount rate r', id: 's1-r', min: 0.03, max: 0.30, step: 0.005, value: state.r, format: fmtPct, onChange: v => { state.r = v; update(); } });
+    gTSlider = createSlider(controls, { label: 'Terminal growth g_T', id: 's1-gt', min: 0, max: 0.06, step: 0.0025, value: state.gT, format: fmtPct, onChange: v => { state.gT = v; update(); } });
+    createButton(controls, { label: 'Reset', onClick: () => { Object.assign(state, S1_DEFAULTS); ['s1-g','s1-n','s1-r','s1-gt'].forEach((id, i) => { const el = document.getElementById(id); el.value = [state.g, state.n, state.r, state.gT][i]; el.dispatchEvent(new Event('input')); }); } });
+
+    update();
+}
+
+function drawS1(res, state) {
+    const years = res.flows.map(f => f.t);
+    const traces = [
+        { type: 'bar', name: 'Nominal cash', x: years, y: res.flows.map(f => f.fcf), marker: { color: '#cbd5e1' } },
+        { type: 'bar', name: 'Present value', x: years, y: res.flows.map(f => f.pv), marker: { color: '#2563eb' } },
+        { type: 'bar', name: 'PV of terminal value', x: ['TV'], y: [res.pvTerminal], marker: { color: '#f59e0b' } },
+    ];
+    Plotly.react('chart1', traces, plotlyDefaults({
+        barmode: 'group', xaxis: { title: 'Year', type: 'category' }, yaxis: { title: 'Cash' },
+        legend: { orientation: 'h', y: 1.12 },
+    }), { responsive: true, displayModeBar: false });
+
+    Plotly.react('chart1b', [
+        { type: 'bar', orientation: 'h', name: 'Explicit years', x: [res.pvExplicit / res.value], y: ['share of V'], marker: { color: '#2563eb' }, text: fmtPct(res.pvExplicit / res.value), textposition: 'inside' },
+        { type: 'bar', orientation: 'h', name: 'Terminal value', x: [res.terminalShare], y: ['share of V'], marker: { color: '#f59e0b' }, text: fmtPct(res.terminalShare), textposition: 'inside' },
+    ], plotlyDefaults({ barmode: 'stack', margin: { t: 10, b: 30, l: 80, r: 20 }, xaxis: { range: [0, 1], tickformat: '.0%' }, showlegend: false }), { responsive: true, displayModeBar: false });
+}
+
+function renderS1Readout(res, state, clamped) {
+    const rs = [state.r - 0.01, state.r, state.r + 0.01];
+    const gs = [state.gT - 0.005, state.gT, state.gT + 0.005];
+    let grid = '<table class="sens-grid"><tr><th>V</th>' + gs.map(g => `<th>g_T ${fmtPct(g)}</th>`).join('') + '</tr>';
+    for (const r of rs) {
+        grid += `<tr><th>r ${fmtPct(r)}</th>`;
+        for (const g of gs) {
+            const ok = g < r - 0.001;
+            const v = ok ? fmtMoney(dcf({ ...state, r, gT: g }).value) : '—';
+            grid += `<td class="${r === state.r && g === state.gT ? 'base' : ''}">${v}</td>`;
+        }
+        grid += '</tr>';
+    }
+    grid += '</table>';
+    const warn = clamped ? `<div class="callout warn"><div class="callout-tag">Clamped</div>$g_T$ was pulled down to ${fmtPct(state.gT)} to stay below $r$. At $g_T \\to r$ the terminal value diverges: the geometric series has ratio $(1+g_T)/(1+r) \\to 1$.</div>` : '';
+    document.getElementById('readout1').innerHTML = `
+        ${warn}
+        <p><strong>Value</strong> <span class="estimate">${fmtMoney(res.value)}</span>
+        &nbsp;·&nbsp; explicit years ${fmtMoney(res.pvExplicit)} &nbsp;·&nbsp; terminal lump ${fmtMoney(res.pvTerminal)}
+        &nbsp;·&nbsp; <strong>terminal share ${fmtPct(res.terminalShare)}</strong></p>
+        <p>Sensitivity of $V$ to one point of $r$ and half a point of $g_T$:</p>
+        ${grid}
+        ${callout('take', 'Your take', `At the defaults the terminal lump is over half the value. Most of "the value" is two parameters, $r$ and $g_T$, applied to a year-$N$ number that is itself a forecast. Move $r$ by one point and watch the total move by more than the entire first three years of cash.`)}
+    `;
+    renderAllMath();
 }
 </script>
 </body>
