@@ -120,9 +120,18 @@
     <!-- SANDBOX 3 -->
     <section class="sandbox" id="sandbox3">
         <h2>Sandbox 3: After the Deal</h2>
-        <div class="description"><p>Filled in Task 6.</p></div>
+        <div class="description">
+            <p>
+                Two standalone DCFs, then the merger layer: synergies that ramp in, a one-time integration
+                cost, fees, an offer price, a financing mix that moves the discount rate and the share count,
+                and the probability the deal closes at all. Synthetic numbers shaped like the video's exercise.
+            </p>
+        </div>
         <div class="sandbox-content">
-            <div class="chart-container" id="chart3"></div>
+            <div>
+                <div class="chart-container" id="chart3"></div>
+                <div class="chart-container" id="chart3b" style="min-height:200px"></div>
+            </div>
             <div class="controls" id="controls3"></div>
         </div>
         <div class="readout" id="readout3"></div>
@@ -177,7 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAllMath();
     initSandbox1();
     initSandbox2();
-    // initSandbox3() … initSandbox6() are appended by Tasks 6–9.
+    initSandbox3();
+    // initSandbox4() … initSandbox6() are appended by Tasks 7–9.
 });
 
 // ── Formatting helpers used by every sandbox ────────────────
@@ -349,6 +359,71 @@ function renderS2Readout(v, st, deal) {
     const note = v.A > v.B ? `<p>Note the default result: the strategic buyer's 15% synergy and two extra points of growth <em>lose</em> to the financial buyer's two points of cheaper capital. The exponent beats the numerator.</p>` : '';
     document.getElementById('readout2').innerHTML = body + note +
         callout('take', 'Your take', 'Same asset, three numbers, by construction. Each party discounts at their own alternative return and forecasts what they would do with the business. The DCF is not opposed to marginal-utility value theory. It is that theory\'s arithmetic, and the transaction happens only where the buyer\'s number exceeds the seller\'s: gains from trade, nothing more mystical.');
+    renderAllMath();
+}
+
+// ── SANDBOX 3 ───────────────────────────────────────────────
+function initSandbox3() {
+    const controls = document.getElementById('controls3');
+    const st = JSON.parse(JSON.stringify(MERGER_DEFAULTS));
+    const standalonePerShare = mergerModel(st).VT / st.target.shares;
+    let debtSlider, stockSlider;
+
+    const update = debounce(() => {
+        // Guard: debt + stock ≤ 1; the slider that did not move gives way.
+        if (st.debtShare + st.stockShare > 1) {
+            if (st._last === 'debt') st.stockShare = 1 - st.debtShare; else st.debtShare = 1 - st.stockShare;
+            debtSlider.value = st.debtShare; debtSlider.nextElementSibling.textContent = fmtPct(st.debtShare);
+            stockSlider.value = st.stockShare; stockSlider.nextElementSibling.textContent = fmtPct(st.stockShare);
+        }
+        const m = mergerModel(st);
+        drawS3(m, st);
+        renderS3Readout(m, st);
+    });
+
+    createSlider(controls, { label: 'Offer price per target share', id: 's3-p', min: +(0.5 * standalonePerShare).toFixed(2), max: +(2 * standalonePerShare).toFixed(2), step: 0.25, value: st.offerPerShare, format: v => v.toFixed(2), onChange: v => { st.offerPerShare = v; update(); } });
+    createSlider(controls, { label: 'Annual synergy S (run-rate)', id: 's3-s', min: 0, max: 40, step: 0.5, value: st.S, onChange: v => { st.S = v; update(); } });
+    createSlider(controls, { label: 'Synergy realization p_s', id: 's3-ps', min: 0, max: 1, step: 0.05, value: st.pS, format: fmtPct, onChange: v => { st.pS = v; update(); } });
+    createSlider(controls, { label: 'Integration cost I (year 1)', id: 's3-i', min: 0, max: 60, step: 1, value: st.I, onChange: v => { st.I = v; update(); } });
+    debtSlider = createSlider(controls, { label: 'Financing: debt share', id: 's3-d', min: 0, max: 1, step: 0.05, value: st.debtShare, format: fmtPct, onChange: v => { st.debtShare = v; st._last = 'debt'; update(); } });
+    stockSlider = createSlider(controls, { label: 'Financing: stock share (rest is cash)', id: 's3-st', min: 0, max: 1, step: 0.05, value: st.stockShare, format: fmtPct, onChange: v => { st.stockShare = v; st._last = 'stock'; update(); } });
+    createSlider(controls, { label: 'Interest on deal debt', id: 's3-int', min: 0.03, max: 0.12, step: 0.005, value: st.interest, format: fmtPct, onChange: v => { st.interest = v; update(); } });
+    createSlider(controls, { label: 'Close probability p_c', id: 's3-pc', min: 0.5, max: 1, step: 0.05, value: st.pClose, format: fmtPct, onChange: v => { st.pClose = v; update(); } });
+
+    update();
+}
+
+function drawS3(m, st) {
+    Plotly.react('chart3', [{
+        type: 'waterfall', orientation: 'v',
+        measure: ['absolute', 'relative', 'relative', 'relative', 'relative', 'total'],
+        x: ['Target standalone', '+ PV synergies', '− integration', '− fees', '− price paid', 'Value created'],
+        y: [m.VT, m.pvSyn, -st.I, -m.fees, -m.pricePaid, 0],
+        text: [m.VT, m.pvSyn, -st.I, -m.fees, -m.pricePaid, m.valueCreated].map(fmtMoney), textposition: 'outside',
+        increasing: { marker: { color: '#16a34a' } }, decreasing: { marker: { color: '#dc2626' } }, totals: { marker: { color: m.valueCreated >= 0 ? '#2563eb' : '#dc2626' } },
+        connector: { line: { color: '#cbd5e1' } },
+    }], plotlyDefaults({ showlegend: false, yaxis: { title: 'Value to the acquirer\'s owners' }, margin: { b: 80 } }), { responsive: true, displayModeBar: false });
+
+    Plotly.react('chart3b', [{
+        type: 'bar', x: m.cashStrip.map(c => c.t), y: m.cashStrip.map(c => c.cfTarget),
+        marker: { color: m.cashStrip.map(c => c.needsFinancing ? '#dc2626' : '#2563eb') },
+        text: m.cashStrip.map(c => c.needsFinancing ? 'needs financing' : ''), textposition: 'outside',
+    }], plotlyDefaults({ showlegend: false, xaxis: { title: 'Year', dtick: 1 }, yaxis: { title: 'Acquired business: cash after deal costs' }, margin: { t: 10 } }), { responsive: true, displayModeBar: false });
+}
+
+function renderS3Readout(m, st) {
+    const flagged = m.cashStrip.filter(c => c.needsFinancing).map(c => c.t);
+    document.getElementById('readout3').innerHTML = `
+        <p><strong>Standalone:</strong> target ${fmtMoney(m.VT)} (${(m.VT / st.target.shares).toFixed(2)}/share), acquirer ${fmtMoney(m.VA)} (${m.acqPerShareBefore.toFixed(2)}/share).
+           Offer ${st.offerPerShare.toFixed(2)}/share = ${fmtMoney(m.pricePaid)} paid, a premium of ${fmtMoney(m.premium)} (${fmtPct(m.premium / m.VT)}).</p>
+        <p><strong>Value created for the acquirer's owners:</strong> <span class="estimate ${m.valueCreated >= 0 ? 'correct' : 'wrong'}">${fmtMoney(m.valueCreated)}</span> at close;
+           <strong>${fmtMoney(m.valueCreatedToday)}</strong> today after weighting by the ${fmtPct(st.pClose)} chance it closes and discounting one year at the blended rate ${fmtPct2(m.rC)}.</p>
+        <p><strong>Per share:</strong> acquirer ${m.acqPerShareBefore.toFixed(2)} before, ${m.acqPerShareAfter.toFixed(2)} after, with ${fmtMoney(m.newShares)} new shares issued.
+           ${Math.abs(m.wealthTransfer) > 0.01 ? `The per-share route gives value created of ${fmtMoney(m.valueCreated + m.wealthTransfer)}, which differs from the waterfall by ${fmtMoney(m.wealthTransfer)}: that gap is the wealth transfer from issuing stock at the standalone price rather than the post-deal price. It is labeled here rather than hidden.` : 'With no stock issued the per-share route and the waterfall agree exactly.'}</p>
+        <p><strong>Financing:</strong> ${flagged.length ? `the acquired business does not cover its own integration cost and deal-debt service in year${flagged.length > 1 ? 's' : ''} ${flagged.join(', ')}. Someone raises money or the plan changes.` : 'the acquired business covers its own integration cost and deal-debt service every year.'}</p>
+        ${callout('siren', 'Siren check', `This offer needs <strong>${fmtMoney(m.impliedSynergy)}</strong> per year of realized synergy to break even, against a target that generates ${fmtMoney(st.target.fcf1)} in its first year. Has anyone in this industry ever realized that? The synergy line is the free parameter that fits any premium.`)}
+        ${callout('take', 'Your take', 'The standalone DCF approximates value-to-anyone. The synergy term is value-to-this-buyer, and it is different for every bidder because each brings different overlap, distribution, and financing. Same asset, different buyers, different numbers, by construction. This is your marginal-utility point made literal.')}
+    `;
     renderAllMath();
 }
 </script>
