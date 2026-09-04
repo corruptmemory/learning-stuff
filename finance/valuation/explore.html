@@ -444,17 +444,18 @@ function initSandbox4() {
     const st = { mu: 0.08, sigma: 0.10, p: 0.05, xm: 0.20, alpha: 1.5, nMax: 10000, histLen: 30, reps: 500, seed: 1 };
 
     const update = debounce(() => {
-        const trueMean = st.alpha > 1 ? st.mu - st.p * paretoMean(st.xm, st.alpha) : null;
+        const finite = st.alpha > 1;
+        const trueMean = finite ? st.mu - st.p * paretoMean(st.xm, st.alpha) : null;
         const seeds = [0, 1, 2, 3, 4].map(k => st.seed * 1000 + k);
         const runs = { thin: [], fat: [] };
-        for (const thin of [true, false]) {
+        for (const thin of (finite ? [true, false] : [false])) {
             for (const s of seeds) {
                 const r = sampleReturns(seededRandom(s), { ...st, n: st.nMax, thin });
                 runs[thin ? 'thin' : 'fat'].push(runningMean(r));
             }
         }
         const est = { thin: [], fat: [] };
-        for (const thin of [true, false]) {
+        for (const thin of (finite ? [true, false] : [false])) {
             const rng = seededRandom(st.seed * 7919 + (thin ? 1 : 2));
             for (let k = 0; k < st.reps; k++) {
                 const r = sampleReturns(rng, { ...st, n: st.histLen, thin });
@@ -486,6 +487,7 @@ function logIndices(n) {
 }
 
 function drawS4(runs, est, trueMean, st) {
+    const finite = trueMean !== null;
     const idx = logIndices(st.nMax);
     const x = idx.map(i => i + 1);
     const traces = [];
@@ -498,7 +500,7 @@ function drawS4(runs, est, trueMean, st) {
     const yr = trueMean === null ? undefined : [trueMean - 0.15, trueMean + 0.15];
     Plotly.react('chart4', traces, plotlyDefaults({
         grid: { rows: 1, columns: 2, pattern: 'independent' },
-        xaxis: { type: 'log', title: 'n (thin tail: fixed loss)', domain: [0, 0.47] }, yaxis: { title: 'running mean', range: yr },
+        xaxis: { type: 'log', title: finite ? 'n (thin tail: fixed loss)' : 'n (thin tail: undefined at α ≤ 1)', domain: [0, 0.47] }, yaxis: { title: 'running mean', range: yr },
         xaxis2: { type: 'log', title: `n (fat tail: Pareto α = ${st.alpha.toFixed(1)})`, domain: [0.53, 1] }, yaxis2: { range: yr },
         shapes, showlegend: false, margin: { t: 20 },
     }), { responsive: true, displayModeBar: false });
@@ -512,13 +514,20 @@ function drawS4(runs, est, trueMean, st) {
 function quantile(arr, q) { const s = Float64Array.from(arr).sort(); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; }
 
 function renderS4Readout(est, trueMean, st) {
-    const w = k => quantile(est[k], 0.95) - quantile(est[k], 0.05);
+    const q = (k, p) => est[k].length ? quantile(est[k], p) : NaN;
+    const w = k => q(k, 0.95) - q(k, 0.05);
+    const p1 = k => q(k, 0.01);
+    const worst = k => est[k].length ? Math.min(...est[k]) : NaN;
+    const thinLine = est.thin.length
+        ? `thin tail: 5th–95th <strong>${fmtPct2(w('thin'))}</strong>, 1-in-100 history <strong>${fmtPct2(p1('thin'))}</strong>, worst <strong>${fmtPct2(worst('thin'))}</strong>`
+        : `thin tail: <em>undefined</em> (no finite loss to match at this $\\alpha$)`;
+    const fatLine = `fat tail: 5th–95th <strong>${fmtPct2(w('fat'))}</strong>, 1-in-100 history <strong>${fmtPct2(p1('fat'))}</strong>, worst <strong>${fmtPct2(worst('fat'))}</strong>`;
     const banner = trueMean === null ? `<div class="callout warn"><div class="callout-tag">No finite mean</div>At $\\alpha \\le 1$ the Pareto loss has no expectation. There is nothing for the running mean to converge to, so no sample size helps. The reference line is gone because there is no true value to draw.</div>` : '';
     document.getElementById('readout4').innerHTML = `
         ${banner}
         <p>${trueMean === null ? '' : `True mean in both regimes: <span class="estimate">${fmtPct2(trueMean)}</span>. `}
-           Spread of the estimate (5th to 95th percentile) across ${st.reps} histories of ${st.histLen} periods:
-           thin tail <strong>${fmtPct2(w('thin'))}</strong>, fat tail <strong>${fmtPct2(w('fat'))}</strong>.</p>
+           Across ${st.reps} histories of ${st.histLen} periods, the estimate you would have made:<br>${thinLine};<br>${fatLine}.</p>
+        <p>Notice the 5th-to-95th band barely separates the regimes. It is a robust statistic, which means it is built to ignore exactly the region the fat tail lives in. Pick a tail-blind statistic and the tail disappears from your report, not from the world. The 1-in-100 and worst-history columns are where the two regimes actually part company.</p>
         <p>Thirty periods is a typical equity-premium sample. In the fat regime the number you would have plugged into $r$ depends on which history you happened to live through, and no history contains the loss that dominates the expectation.</p>
         ${callout('take', 'Your take', 'This is the risk premium the DCF asked you to put in the exponent. A scalar premium assumes the estimator converges and that risk shaves off the same fraction every year. Under a power-law tail neither holds. The fix is not a better estimate of the premium; it is to stop hiding risk in the exponent and put it in the cash flows as explicit scenarios, with ruin as its own scenario.')}
     `;
