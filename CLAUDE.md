@@ -93,7 +93,7 @@ Pure math lives in finance/valuation/valuation.js and is Node-testable:
 `node -e "require('./finance/valuation/valuation.js').runSelfTest()"`.
 
 Research notes (docs/brainstorming/):
-1. Naturalistic fallacy (2026-09-04 Plaud note, 2026-09-05 dive): Hume's is-ought gap vs Moore's naturalistic fallacy vs the appeal to nature, with primary quotes from Treatise 3.1.1.27 and Principia Ethica §§10, 13, 27–28. §9 records the follow-up exchange: Harris, Humean naturalism as the landing point, entropy/time, the measurement problem, and the utopia maxim as a stability result.
+1. Naturalistic fallacy (2026-09-04 Plaud note, 2026-09-05 dive): Hume's is-ought gap vs Moore's naturalistic fallacy vs the appeal to nature, with primary quotes from Treatise 3.1.1.27 and Principia Ethica §§10, 13, 27–28. §§9–10 record the follow-up exchange: Harris, Humean naturalism as the landing point, entropy/time, the measurement problem, the utopia maxim as a stability result, then the bridge thought experiment, teleosemantics, oughts as secondary qualities (the colour model), the anthropic inversion, and the coda.
 
 **Planned tracks (see docs/plans/2026-03-09-new-tracks-design.md):**
 - **graphics/vulkan/** — shader mental model, pipeline architecture, Odin exercises
