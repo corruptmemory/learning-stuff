@@ -20,3 +20,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Tool output
+.playwright-mcp/

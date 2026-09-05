@@ -38,6 +38,10 @@ Shared infrastructure:
 - `shared/explore.css` — consistent styling across all explorations
 - `shared/explore.js` — shared utilities (math rendering, slider controls, chart theming)
 
+Docs:
+- `docs/plans/` — design and implementation plans per exploration
+- `docs/brainstorming/` — research notes: raw Plaud voice-note transcripts beside their synthesized dives
+
 ## build.sh
 
 ```bash
