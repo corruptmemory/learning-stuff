@@ -40,7 +40,7 @@ Shared infrastructure:
 
 Docs:
 - `docs/plans/` — design and implementation plans per exploration
-- `docs/brainstorming/` — research notes: raw Plaud voice-note transcripts beside their synthesized dives
+- `docs/brainstorming/` — research notes: synthesized dives, each beside the raw Plaud voice-note transcript it grew from, when there is one
 
 ## build.sh
 

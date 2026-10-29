@@ -19,7 +19,7 @@ Interactive learning environment for data science, finance, ML, web technologies
 - **Explorations are exploration-first**: interactive sandboxes with sliders and charts, not lectures. Short conceptual intros, then hands-on.
 - **Rosetta Stone pattern**: when showing code, show both R and Python side by side with annotations mapping to the concepts explored in the sandboxes
 - **Tabbed Rosetta Stone**: for multi-language comparisons (WASM track), use `createTabbedCode()` with language tabs (Go, TinyGo, Rust, Odin, Jai, WAT, JS)
-- **Research notes live in `docs/brainstorming/`**: `YYYY-MM-DD-<topic>-plaud-note.md` (raw Plaud transcript + AI summary, verbatim) beside `YYYY-MM-DD-<topic>-dive.md` (the synthesis, with a sources section marking primary-landed vs from-memory). Plaud AI summaries are leads, not sources: verify every citation (2026-09-05: one invented two SEP entries).
+- **Research notes live in `docs/brainstorming/`**: `YYYY-MM-DD-<topic>-plaud-note.md` (raw Plaud transcript + AI summary, verbatim) beside `YYYY-MM-DD-<topic>-dive.md` (the synthesis, with a sources section marking primary-landed vs from-memory). A dive that grew from a chat conversation stands alone, with no Plaud note. Plaud AI summaries are leads, not sources: verify every citation (2026-09-05: one invented two SEP entries).
 
 ## Adding a New Topic
 
@@ -94,6 +94,7 @@ Pure math lives in finance/valuation/valuation.js and is Node-testable:
 
 Research notes (docs/brainstorming/):
 1. Naturalistic fallacy (2026-09-04 Plaud note, 2026-09-05 dive): Hume's is-ought gap vs Moore's naturalistic fallacy vs the appeal to nature, with primary quotes from Treatise 3.1.1.27 and Principia Ethica §§10, 13, 27–28. §§9–11 record the follow-up exchange: Harris, Humean naturalism as the landing point, entropy/time, the measurement problem, the utopia maxim as a stability result, then the bridge thought experiment, teleosemantics, oughts as secondary qualities (the colour model), the anthropic inversion, the coda, and finally the brain as an ought-secreting gland, silence, Levelt's speech monitor, and the blush ("oughts are organs").
+2. Autonomous research loops (2026-10-29 dive, from a chat conversation; no Plaud note): the "autonomously iterate on research loops" engine behind Anthropic's merge-per-day curve in "Redesigning source control". Covers the anatomy of Karpathy's autoresearch, Anthropic's evidence (speedup test, automated alignment researchers, reward hacking), and the day-to-day workflow (Mishra-Sharma's CLAUDE.md/CHANGELOG/test oracle; Carlini's parallel C compiler). Also covers what generalizes beyond model training, and physics/stats framings: zero-temperature Metropolis, blind analysis, and the winner's curse in a noisy keep-or-revert ratchet, which ties into the planned permutation-testing exploration.
 
 **Planned tracks (see docs/plans/2026-03-09-new-tracks-design.md):**
 - **graphics/vulkan/** — shader mental model, pipeline architecture, Odin exercises
