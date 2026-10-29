@@ -97,6 +97,15 @@ Research notes (docs/brainstorming/):
 2. Autonomous research loops (2026-10-29 dive, from a chat conversation; no Plaud note): the "autonomously iterate on research loops" engine behind Anthropic's merge-per-day curve in "Redesigning source control". Covers the anatomy of Karpathy's autoresearch, Anthropic's evidence (speedup test, automated alignment researchers, reward hacking), and the day-to-day workflow (Mishra-Sharma's CLAUDE.md/CHANGELOG/test oracle; Carlini's parallel C compiler). Also covers what generalizes beyond model training, and physics/stats framings: zero-temperature Metropolis, blind analysis, and the winner's curse in a noisy keep-or-revert ratchet, which ties into the planned permutation-testing exploration.
 3. Formal verification for Go (2026-10-29 dive, from a chat conversation prompted by a LinkedIn post about Anthropic and Theorem's binary-level Rocq proofs; no Plaud note). Covers what that work proved and trusted, and why "Lean in Go doc comments" needs a bridge to the code. Compares the options with plausibility: Gobra (`//@` contracts, VerifiedSCION), Goose/Perennial (Go to Rocq), Cedar-style Lean model plus differential testing, LeanPort/Dafny, and TLA+. Section 7 parks the upcoming application: a Jai parser in Go for `entire graph` (see `~/projects/jai-wayland/docs/plans/2026-10-29-entire-graph-jai-support.md`) as the practice problem for fuzzing and proofs.
 
+**Open threads from the 2026-10-28/29 session (not started):**
+- **Noisy-ratchet sandbox** (`data-science/` explore.html, pairs with permutation testing): a keep-or-revert loop on a noisy score, with sliders for σ, true effect size, and number of tries. It should show the ~H_n spurious keeps, the winner's curse (best-so-far about 2.5σ above baseline after 100 tries), and the inflated bar that rejects real small gains. Optional second panel: an evaluator the agent can partly game. Spec in `docs/brainstorming/2026-10-29-autonomous-research-loops-dive.md` §5–6.
+- **Jai parser in Go for `entire graph`**: the upcoming practice problem for fuzzing and proofs. It lives in its own new repo, not here. Plan in `~/projects/jai-wayland/docs/plans/2026-10-29-entire-graph-jai-support.md`; verification mapping in `docs/brainstorming/2026-10-29-formal-verification-go-dive.md` §7.
+- **Smaller follow-ups:**
+  - read the formal-verification post's appendix PDF and footnotes (the clip missed them)
+  - check where Goose development lives now
+  - try TLA+ on one goroutine-actor protocol
+  - read the two Anthropic harness posts and the full alignment.anthropic.com write-ups
+
 **Planned tracks (see docs/plans/2026-03-09-new-tracks-design.md):**
 - **graphics/vulkan/** — shader mental model, pipeline architecture, Odin exercises
 - **graphics/gpu-programming/** — CUDA, compute shaders (future)
